@@ -3,8 +3,6 @@ import tkinter.messagebox as tkmb
 import pickle
 import mysql.connector
 
-import settings_ui_script as settingsui
-
 sqlPass = "CH3-CH2-CH2-CH3"
 
 
@@ -66,7 +64,7 @@ def screen2():
 ctk.set_appearance_mode("dark")
 
 # Selecting color theme - blue, green, dark-blue
-ctk.set_default_color_theme("green")
+ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
 app = ctk.CTk()
 app.geometry("600x600")

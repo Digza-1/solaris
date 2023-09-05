@@ -111,7 +111,7 @@ def screen2():
 ctk.set_appearance_mode("dark")
 
 # Selecting color theme - blue, green, dark-blue
-ctk.set_default_color_theme("green")
+ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
 app = ctk.CTk()
 app.geometry("600x600")
@@ -121,26 +121,28 @@ label = ctk.CTkLabel(app, text="register user")
 
 label.pack(pady=20)
 
+frame0 = ctk.CTkFrame(master=app,width=1200)
+frame0.pack(fill="both",pady=10, padx=10, expand=True)
 
-frame = ctk.CTkFrame(master=app)
-frame.pack(pady=20, padx=40, fill="both", expand=True)
+frame = ctk.CTkFrame(master=frame0,width=1200,fg_color="#020202")
+frame.pack(pady=10, padx=10, fill="both", expand=True)
 
 label = ctk.CTkLabel(master=frame, text="enter user crentials")
 label.pack(pady=12, padx=10)
 
 
 user_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
-user_entry.pack(pady=12, padx=15)
+user_entry.pack(pady=3, padx=15)
 user_entry.bind("<KeyRelease>", check_username)
 
 u_valid = ctk.CTkLabel(master=frame, text="")
-u_valid.pack(pady=12, padx=10)
+u_valid.pack(pady=1, padx=10)
 
 user_pass = ctk.CTkEntry(master=frame, placeholder_text="Password", show="*", width=220)
 user_pass.pack(pady=12, padx=10)
 
 confirm_user_pass = ctk.CTkEntry(
-    master=frame, placeholder_text="Password", show="*", width=220
+    master=frame, placeholder_text="confirm Password", show="*", width=220
 )
 confirm_user_pass.pack(pady=12, padx=10)
 

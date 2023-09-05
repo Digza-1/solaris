@@ -8,9 +8,7 @@ clock = pygame.time.Clock()
 
 from pygame.locals import *
 
-pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()  # initiates pygame
-pygame.mixer.set_num_channels(64)
 
 pygame.display.set_caption("Proto 5")
 
@@ -31,34 +29,11 @@ true_scroll = [0, 0]
 
 CHUNK_SIZE = 8
 
-global animation_frames
-animation_frames = {}
-
 
 SKY_COLOUR = (146, 244, 255)
 SKY_COLOUR1 = (59, 135, 164)
 
 BG_COLOUR = (26, 135, 122)  # (19, 127, 115)  # old(15, 76, 73)
-
-
-def load_animation(path, frame_durations):
-    global animation_frames
-    animation_name = path.split("/")[-1]
-    animation_frame_data = []
-    n = 0
-
-    for frame in frame_durations:
-        animation_frame_id = animation_name + "_" + str(n)
-        img_loc = path + "/" + animation_frame_id + ".png"
-        # player_animations/idle/idle_0.png
-        animation_image = pygame.image.load(img_loc).convert()
-        animation_image.set_colorkey((255, 255, 255))
-        animation_frames[animation_frame_id] = animation_image.copy()
-        for i in range(frame):
-            animation_frame_data.append(animation_frame_id)
-        n += 1
-
-    return animation_frame_data
 
 
 def change_action(action_var, frame, new_value):
@@ -68,28 +43,18 @@ def change_action(action_var, frame, new_value):
     return action_var, frame
 
 
-animation_states = {}
-
-# animation_states["run"] = load_animation("player_animations/run", [7, 7])
-# animation_states["idle"] = load_animation("player_animations/idle", [7, 7, 40])
-
 game_map = {}
 
 
-grass_img = pygame.image.load("pyrraria/assets/grass.png")
-dirt_img = pygame.image.load("pyrraria/assets/dirt.png")
-plant_img = pygame.image.load("pyrraria/assets/plant.png").convert()
+grass_img = pygame.image.load("solaris/assets/grass.png")
+dirt_img = pygame.image.load("solaris/assets/dirt.png")
+plant_img = pygame.image.load("solaris/assets/plant.png").convert()
 plant_img.set_colorkey((255, 255, 255))
 
-player_img = pygame.image.load("pyrraria/assets/player.png").convert()
+player_img = pygame.image.load("solaris/assets/player.png").convert()
 player_img.set_colorkey((255, 255, 255))
 
 tile_index = {1: grass_img, 2: dirt_img, 3: plant_img}
-
-# jump_sound = pygame.mixer.Sound("jump.wav")
-# grass_sounds = [pygame.mixer.Sound("grass_0.wav"), pygame.mixer.Sound("grass_1.wav")]
-# grass_sounds[0].set_volume(0.2)
-# grass_sounds[1].set_volume(0.2)
 
 player_action = "idle"
 player_frame = 0
@@ -200,10 +165,6 @@ while running:  # game loop
     if moving_left == True:
         player_movement[0] -= 2
     player_movement[1] += vertical_momentum
-    vertical_momentum += 0.2
-
-    if vertical_momentum > 3:
-        vertical_momentum = 3
 
     if player_movement[0] == 0:
         player_action, player_frame = change_action(player_action, player_frame, "idle")
@@ -220,12 +181,8 @@ while running:  # game loop
 
     if collisions["bottom"] == True:
         air_timer = 0
-        vertical_momentum = 0
+        # vertical_momentum = 0
 
-        # if player_movement[0] != 0:
-        #     if grass_sound_timer == 0:
-        #         grass_sound_timer = 30
-        #         random.choice(grass_sounds).play() #sounds later
     else:
         air_timer += 1
 
@@ -258,9 +215,11 @@ while running:  # game loop
                 moving_left = True
 
             if event.key == K_UP or event.key == K_w or event.key == K_SPACE:
-                if air_timer < 6:
-                    # jump_sound.play()  #sound later
-                    vertical_momentum = -5
+                
+                vertical_momentum = -5
+            if event.key == K_DOWN or event.key == K_s:
+                
+                vertical_momentum = +5
 
         if event.type == KEYUP:
             if event.key == K_RIGHT or event.key == K_d:

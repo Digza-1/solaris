@@ -41,7 +41,7 @@ def stat_screen(uname, uid):
     # Selecting GUI theme - dark, light , system
     ctk.set_appearance_mode("dark")
     # Selecting color theme - blue, green, dark-blue
-    ctk.set_default_color_theme("green")
+    ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
     app = ctk.CTk()
     app.geometry("600x600")
@@ -53,7 +53,19 @@ def stat_screen(uname, uid):
     frame = ctk.CTkScrollableFrame(master=app, width=440)
     frame.pack(pady=10, padx=10, fill="y", expand=True)
 
-    for w_id, w_na, index in worlds, range(len(worlds)):
+    worlds_list = []  # (worlds, range(len(worlds)))
+    worlds_dict = {}
+
+    index = 0
+    for w_id, w_na in worlds:
+        worlds_dict[index] = [w_id, w_na]
+        index += 1
+
+    print(list(worlds_dict.items()))
+    for index ,w_temp in worlds_dict.items():
+        w_id,w_na = w_temp
+        
+        print(w_id,w_na)
         in_frame = ctk.CTkFrame(frame, fg_color="#4ec999", bg_color="black")
         in_frame.pack(pady=5, fill="x")
 
