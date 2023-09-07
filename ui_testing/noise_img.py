@@ -112,13 +112,13 @@ scale = 100.0
 octaves = 6
 persistence = 0.5
 lacunarity = 2.0
-seed = 0
+seed = 1
 
-# perlin_noise1 = generate_perlin_noise(
-#     width, height, scale, octaves, persistence, lacunarity, seed
-# )
+perlin_noise0 = perlin_2(
+    width, height, scale, octaves, persistence, lacunarity, seed*2
+)
 perlin_noise1 = perlin_2(
     width, height, scale, octaves, persistence, lacunarity, seed
 )
-
-show_perlin_noise_image(perlin_noise1)
+perlin_noise3 = perlin_noise1 - perlin_noise0
+show_perlin_noise_image(perlin_noise3)
