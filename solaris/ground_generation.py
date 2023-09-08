@@ -1,6 +1,7 @@
 import random
 import noise
 import random
+import opensimplex
 import numpy as np
 
 # Window dimensions
@@ -46,18 +47,18 @@ scale1 = 25.67
 octaves1 = 10
 persistence1 = 0.7
 lacunarity1 = 0.2
-seed1 = random.randint(100, 1000)
+seed1 = random.randint(-1000, 1000)
 CHUNK_SIZE1 = 25
 
+noise_generator = opensimplex.OpenSimplex(seed=seed1)
+# ============================ solaris astroid generation ==============================
+# dict based
 
-#============================ solaris astroid generation ==============================
-#dict based
 
 def get_pos(world):
     for x in world:
         for y in x:
             print(y)
-
 
 
 def generate_space_V1(x, y, offset, CHUNK_SIZE):
@@ -87,8 +88,39 @@ def generate_space_V1(x, y, offset, CHUNK_SIZE):
     return chunk_data
 
 
+lim1 = 0.4  # temp
+lim2 = 0.2
+
+
+def generate_space_V2(x, y, offset, CHUNK_SIZE):
+    chunk_data = []
+    for y_pos in range(CHUNK_SIZE):
+        for x_pos in range(CHUNK_SIZE):
+            target_x = x * CHUNK_SIZE + x_pos
+            target_y = y * CHUNK_SIZE + y_pos
+            tile_type = 0  # nothing
+
+            # Use OpenSimplex noise for 2D terrain generation
+            noise_val = int(noise_generator.noise2(target_x * 0.1, target_y * 0.1) * 5)
+
+            # if lim1 > offset - noise_val:
+            #     tile_type = 2
+
+            if lim2 > offset - noise_val + random.randint(1, 4):
+                tile_type = 2
+
+            if tile_type != 0:
+                chunk_data.append([[target_x, target_y], tile_type])
+
+    return chunk_data
+
+
+print(generate_space_V2(0, 0, 0, 25))
 
 # ================= Generate gnd old  =================================
+
+"""===============old=============="""
+
 
 def generate_screen_ground(
     width1, height1, scale1, octaves1, persistence1, lacunarity1, seed1
@@ -182,7 +214,8 @@ def generate_ground_chunk(
 
     return chunk_data
 
-'''
+
+"""
 # Generate larger diagonal caves in the ground
 def generate_caves(ground):
     global GROUND_COLS
@@ -194,154 +227,4 @@ def generate_caves(ground):
                     ground[row][col] = 0  # Empty space (cave)
 
     return ground
-'''
-
-
 """
-# =============================================================================================
-# =============================================================================================
-# ================= Generate random ground v3.2 (dict based) =================================
-
-
-def adj_empty_dict(x, y, height, ground_dict, max_lim, min_lim):
-    adjacent_empty = 0
-
-    if x > min_lim and ground_dict[(x - 1, y)] == EMPTY_BLOCK:
-        adjacent_empty += 1  # Check left
-
-    if x < max_lim - 1 and ground_dict[(x + 1, y)] == EMPTY_BLOCK:
-        adjacent_empty += 1  # Check right
-
-    if adjacent_empty >= 3 or y <= int(height * 0.5) + 2:
-        ground_dict[(x, y)] = 0  # Empty space
-
-
-def chunk_processing_dict(
-    x,
-    y,
-    ground,
-    CHUNK_SIZE,
-    width,
-    height,
-    scale,
-    octaves,
-    persistence,
-    lacunarity,
-    seed,
-):
-    for y in range(height + 1):
-        ground_row = []
-        ground_row = ground[y]
-
-        for x in range(width):
-            noise_2d = noise.pnoise2(
-                x / scale,
-                y / scale,
-                octaves=octaves,  # no of layers
-                persistence=persistence,  #
-                lacunarity=lacunarity,
-                repeatx=width,
-                repeaty=height,
-                base=seed,
-            )
-            if ground[y][x] == DIRT_BLOCK:
-                if noise_2d < (0.77 - (y - int(height * 0.5)) * 0.0467):
-                    ground_row.append(DIRT_BLOCK)
-                else:
-                    ground_row.append(STONE_BLOCK)
-
-            else:
-                pass
-                # ground_row
-
-
-def generate_ground_chunk_dict(
-    x, y, CHUNK_SIZE, width, height, scale, octaves, persistence, lacunarity, seed
-):
-    chunk_data = []
-    for y_pos in range(CHUNK_SIZE):
-        for x_pos in range(CHUNK_SIZE):
-            target_x = x * CHUNK_SIZE + x_pos
-            target_y = y * CHUNK_SIZE + y_pos
-            tile_type = 0  # nothing
-
-            height = int(noise.pnoise1(target_x * 0.1, repeat=9999999) * 5)
-
-            if target_y > 8 - height:
-                tile_type = DIRT_BLOCK  # dirt
-
-            elif target_y == 8 - height:
-                tile_type = GRASS_BLOCK  # grass
-
-            elif target_y == 8 - height - 1:
-                if random.randint(1, 5) == 1:
-                    tile_type = PLANT  # plant
-            if tile_type != 0:
-                pass
-                # chunk_data[] = ([[target_x, target_y], tile_type]) #replace
-
-    return chunk_data
-
-
-def generate_air_dict():
-    global GROUND_BOTTOM_HALF
-
-    ground = []
-    for row in range(1, GROUND_BOTTOM_HALF):
-        ground_row = []
-        for col in range(GROUND_COLS):
-            ground_row.append(0)
-        ground.append(ground_row)
-    return ground
-
-"""
-
-"""
-#ground generation testing
-def generate_ground(width, height, scale, octaves, persistence, lacunarity, seed):
-    ground = []
-    for y in range(height + 1):
-        ground_row = []
-        for x in range(width):
-            height_under_limit = y >= int(height * 0.5)
-            noise_value = noise.pnoise2(
-                x / scale,
-                y / scale,
-                octaves=octaves,
-                persistence=persistence,
-                lacunarity=lacunarity,
-                repeatx=width,
-                repeaty=height,
-                base=seed,
-            )
-
-            if y == int(height * 0.5) and noise_value < 0.8:
-                ground_row.append(1)  # Topmost layer is always green
-            elif height_under_limit and noise_value < (
-                0.9 - (y - int(height * 0.5)) * 0.2
-            ):
-                ground_row.append(1)  # Green layer
-            elif height_under_limit and noise_value < (
-                0.67 - (y - int(height * 0.5)) * 0.046
-            ):
-                if noise_value < (0.4 + (y - int(height * 0.5)) * 0.05):
-                    if noise_value < (0.8 + (y - int(height * 0.5)) * 0.005):
-                        ground_row.append(2)  # Dirt
-                    else:
-                        ground_row.append(3)  # Stone block
-                else:
-                    adjacent_empty = 0
-                    if x > 0 and ground_row[x - 1] == 0:
-                        adjacent_empty += 1  # Check left
-                    if x < len(ground_row) - 1 and ground_row[x + 1] == 0:
-                        adjacent_empty += 1  # Check right
-
-                    if adjacent_empty >= 3 or y <= int(height * 0.5) + 2:
-                        ground_row.append(0)  # Empty space
-                    else:
-                        ground_row.append(3)  # Stone (fallback)
-            else:
-                ground_row.append(0)  # False represents empty space
-        ground.append(ground_row)
-
-    return ground"""

@@ -138,8 +138,8 @@ while running:  # game loop
             target_chunk = str(target_x) + ";" + str(target_y)
 
             if target_chunk not in game_map:
-                game_map[target_chunk] = gnd.generate_space_V1(
-                    target_x, target_y, 9, CHUNK_SIZE
+                game_map[target_chunk] = gnd.generate_space_V2(
+                    target_x, target_y, 0, CHUNK_SIZE
                 )
 
             for tile in game_map[target_chunk]:
