@@ -1,8 +1,5 @@
 import random
-import noise
-import random
 import opensimplex
-import numpy as np
 
 # Window dimensions
 WIDTH = 800

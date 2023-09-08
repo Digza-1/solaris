@@ -1,4 +1,4 @@
-import pygame
+"""import pygame
 
 global animation_frames
 animation_frames = {}
@@ -40,3 +40,4 @@ animation_states = {}
 
 # animation_states["run"] = load_animation("player_animations/run", [7, 7])
 # animation_states["idle"] = load_animation("player_animations/idle", [7, 7, 40])
+"""

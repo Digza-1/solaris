@@ -1,6 +1,6 @@
-# pyrraria
+# Solaris
 
-minecraft 2d made in python 
+space game 2d made in python 
 for computer project
 
 members:
