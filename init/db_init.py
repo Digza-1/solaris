@@ -2,8 +2,8 @@ import mysql.connector
 
 sqlPass = "CH3-CH2-CH2-CH3"
 
-q1 = "create database project;"
-q2 = "use project;"
+q1 = "create database project_solaris;"
+q2 = "use project_solaris;"
 q3 = """create table player_stats 
 ( player_id int primary key,world_id int,
 distance_moved int,depth int,blocks_broken int,blocks_placed int);"""

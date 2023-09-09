@@ -6,8 +6,8 @@ import os, random
 import ground_generation as gnd
 
 
-pyg.init()  # initiates pyg
-pyg.display.set_caption("Proto 5")
+pyg.init()  # initiates pygame
+pyg.display.set_caption("solaris")
 
 WINDOW_SIZE = (1400, 750)
 
@@ -20,14 +20,13 @@ moving_left = False
 moving_up = False
 moving_down = False
 
-vertical_momentum = 0
-horizontal_momentum = 0
-
-air_timer = 0
-
+acceleration = 0.1
 scroll = [0, 0]
+dev_m = True #------
+
 
 CHUNK_SIZE = 8
+TILE_SIZE = 16
 
 
 SKY_COLOUR = (10, 10, 10)  # (146, 244, 255)
@@ -39,18 +38,17 @@ BG_COLOUR2 = (26, 135, 122)
 
 game_map = {}
 
+CWD = os.getcwd()
 
-astroid_1_img = pyg.image.load("solaris/assets/dirt.png").convert()
+astroid_1_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_1_img.set_colorkey((0, 0, 0))
 # astroid_2_img = pyg.image.load("solaris/assets/dirt.png").convert()
 # astroid_3_img = pyg.image.load("solaris/assets/dirt.png").convert()
-
-_img3 = pyg.image.load("solaris/assets/plant.png").convert()
-_img3.set_colorkey((255, 255, 255))
 
 player_img = pyg.image.load("solaris/assets/player.png").convert()
 player_img.set_colorkey((0, 0, 0))
 
-tile_index = {1: astroid_1_img, 2: astroid_1_img, 3: _img3}
+tile_index = {1: astroid_1_img, 2: astroid_1_img}
 
 
 player_flipx = False
@@ -63,30 +61,39 @@ player_rect = pyg.Rect(100, 100, 5, 13)
 background_objects = []  # [[0.5,[1,0,30,3]],[1,[7,10,30,100]]]
 
 clock = pyg.time.Clock()
+time_deltatime = clock.tick(30)
 
 
 def draw_space(tile_rects):
     for y in range(4):
         for x in range(4):
-            target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * 16)))
-            target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * 16)))
+            target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
+            target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
 
             target_chunk = str(target_x) + "," + str(target_y)
 
             if target_chunk not in game_map:
-                game_map[target_chunk] = gnd.generate_space_V2(
+                game_map[target_chunk] = gnd.generate_space(
                     target_x, target_y, 0, CHUNK_SIZE
                 )
 
             for tile in game_map[target_chunk]:
                 display.blit(
                     tile_index[tile[1]],
-                    (tile[0][0] * 16 - scroll[0], tile[0][1] * 16 - scroll[1]),
+                    (
+                        tile[0][0] * TILE_SIZE - scroll[0],
+                        tile[0][1] * TILE_SIZE - scroll[1],
+                    ),
                 )
 
                 if tile[1] in [1, 2]:
                     tile_rects.append(
-                        pyg.Rect(tile[0][0] * 16, tile[0][1] * 16, 16, 16)
+                        pyg.Rect(
+                            tile[0][0] * TILE_SIZE,
+                            tile[0][1] * TILE_SIZE,
+                            TILE_SIZE,
+                            TILE_SIZE,
+                        )
                     )
 
 
@@ -108,6 +115,14 @@ def draw_bg():
 
         else:
             pyg.draw.rect(display, BG_COLOUR, obj_rect)
+
+
+def add_text(text1, x, y, size):
+    font = pyg.font.Font("freesansbold.ttf", size)
+    text = font.render(text1, True, (0, 255, 0))
+    textRect = text.get_rect()
+    textRect.center = (x // 2, y // 2)
+    display.blit(text, textRect)
 
 
 def collision_test(rect, tiles):
@@ -177,19 +192,15 @@ while running:  # game loop
         if event.type == pyg.KEYDOWN:
             if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
                 moving_right = True
-                horizontal_momentum += 2
 
             if event.key == pyg.K_LEFT or event.key == pyg.K_a:
                 moving_left = True
-                horizontal_momentum -= 2
 
             if event.key == pyg.K_UP or event.key == pyg.K_w:
                 moving_up = True
-                vertical_momentum -= 2
 
             if event.key == pyg.K_DOWN or event.key == pyg.K_s:
                 moving_down = True
-                vertical_momentum += 2
 
         if event.type == pyg.KEYUP:
             if event.key == pyg.K_g:
@@ -200,11 +211,7 @@ while running:  # game loop
             if event.key == pyg.K_LEFT or event.key == pyg.K_a:
                 moving_left = False
 
-            if (
-                event.key == pyg.K_UP
-                or event.key == pyg.K_w
-                or event.key == pyg.K_SPACE
-            ):
+            if event.key == pyg.K_UP or event.key == pyg.K_w:
                 moving_up = False
 
             if event.key == pyg.K_DOWN or event.key == pyg.K_s:
@@ -213,39 +220,20 @@ while running:  # game loop
     # ================================== movement =========================================
     # movement stuff
     player_movement = [0, 0]
-    if vertical_momentum >= 2:
-        vertical_momentum = 2
-
-    if horizontal_momentum >= 2:
-        horizontal_momentum = 2
-
-    if vertical_momentum <= -2:
-        vertical_momentum = 2
-
-    if horizontal_momentum <= -2:
-        horizontal_momentum = 2
 
     if moving_right == True:
-        player_movement[0] += 2
+        player_movement[0] += acceleration * time_deltatime
 
     if moving_left == True:
-        player_movement[0] -= 2
+        player_movement[0] -= acceleration * time_deltatime
 
     if moving_up == True:
-        player_movement[1] -= 2
+        player_movement[1] -= acceleration * time_deltatime
 
     if moving_down == True:
-        player_movement[1] += 2
-
-    player_movement[0] += horizontal_momentum
-    player_movement[1] += vertical_momentum
-
-    if player_movement[0] == 0:
-        vertical_momentum = 0
-
-    if player_movement[1] == 0:
-        horizontal_momentum = 0
-
+        player_movement[1] += acceleration * time_deltatime
+        
+    # flip image in direction of movement
     if player_movement[0] > 0:
         player_flipx = False
 
@@ -258,11 +246,15 @@ while running:  # game loop
     if player_movement[1] < 0:
         player_flipy = False
 
+    if dev_m ==True:
+        print(player_movement)
+        add_text(f"{clock.get_fps()}", 350, 330, 10)
+        add_text(f"{player_movement}", 350, 370, 10)
+        add_text(f"{moving_up} , {moving_right}", 350, 350, 10)
+
     player_rect, collisions = move(player_rect, player_movement, tile_rects)
 
-    if collisions["bottom"] == True:
-        vertical_momentum = 0
-
+    # draw player
     display.blit(
         pyg.transform.flip(player_img, player_flipx, player_flipy),
         (player_rect.x - scroll[0], player_rect.y - scroll[1]),
@@ -270,6 +262,6 @@ while running:  # game loop
 
     screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
     pyg.display.update()
-    clock.tick(60)
+    time_deltatime = clock.tick(30)
 
 pyg.quit()

@@ -48,7 +48,6 @@ def login():
             title="Login Successful", message="You have logged in Successfully"
         )
         screen2()
-
     else:
         tkmb.showerror(title="Login Failed", message="Invalid Username and password")
 

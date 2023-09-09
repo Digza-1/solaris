@@ -62,10 +62,10 @@ def settings(uname, uid):
     frame = ctk.CTkFrame(master=app)
     frame.pack(pady=20, fill="both", expand=True)
 
-    inFrame = ctk.CTkScrollableFrame(master=frame, width=500, height=350)
+    inFrame = ctk.CTkScrollableFrame(master=frame, width=500,height=350)
     inFrame.pack(padx=20)
 
-    button = ctk.CTkButton(master=inFrame, text="", command=None)
+    button = ctk.CTkButton(master=inFrame, text="setting 1", command=None)
     button.pack(pady=15)
 
     button = ctk.CTkButton(master=inFrame, text="setting 2", command=None)
@@ -74,10 +74,10 @@ def settings(uname, uid):
     button = ctk.CTkButton(master=inFrame, text="setting 3", command=None)
     button.pack(pady=15)
 
-    admin_button = ctk.CTkButton(master=inFrame, text="admin", command=admin_options)
-    admin_button.pack(pady=15)
+    button = ctk.CTkButton(master=inFrame, text="admin", command=admin_options)
+    button.pack(pady=15)
 
-    for i in range(5):  # for testing
+    for i in range(10): #for testing
         button = ctk.CTkButton(master=inFrame, text="setting 4", command=None)
         button.pack(pady=15)
 
