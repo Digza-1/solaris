@@ -67,14 +67,15 @@ time_deltatime = clock.tick(30)
 def draw_space(tile_rects):
     for y in range(4):
         for x in range(4):
-            target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
-            target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
+            # get 
+            chunk_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
+            chunk_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
 
-            target_chunk = str(target_x) + "," + str(target_y)
+            target_chunk = str(chunk_x) + "," + str(chunk_y)
 
             if target_chunk not in game_map:
                 game_map[target_chunk] = gnd.generate_space(
-                    target_x, target_y, 0, CHUNK_SIZE
+                    chunk_x, chunk_y, 0, CHUNK_SIZE
                 )
 
             for tile in game_map[target_chunk]:
