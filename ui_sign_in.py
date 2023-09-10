@@ -6,8 +6,13 @@ import mysql.connector
 # import settings_ui_script as settingsui
 
 sqlPass = "CH3-CH2-CH2-CH3"
-
 user_valid = False
+app = None
+user_pass = None
+user_entry = None
+u_valid_text = None
+confirm_user_pass = None
+checkbox = None
 
 
 def rem_user(username, password, uid):
@@ -31,10 +36,10 @@ def check_username(event):
     res = mycursor.fetchone()
 
     if res != None and len(uname) > 0:
-        u_valid.configure(text="username already taken", text_color="#ee4b4c")
+        u_valid_text.configure(text="username already taken", text_color="#ee4b4c")
         user_valid = False
     else:
-        u_valid.configure(text="username valid", text_color="#34a853")
+        u_valid_text.configure(text="username valid", text_color="#34a853")
         user_valid = True
 
 
@@ -102,63 +107,64 @@ def register():
 
 def screen2():
     new_window = ctk.CTkToplevel(app)
-    new_window.title("New Window")
-    new_window.geometry("350x150")
-    ctk.CTkLabel(new_window, text="main screen stuff.......").pack()
 
 
-# Selecting GUI theme - dark, light , system (for system default)
-ctk.set_appearance_mode("dark")
+def screen_sign_in(app):
+    global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox
+    # Selecting GUI theme
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
-# Selecting color theme - blue, green, dark-blue
-ctk.set_default_color_theme("theme\solaris_theme_dark.json")
+    app = ctk.CTk()
+    app.geometry("450x600")
+    app.title("sign in")
 
-app = ctk.CTk()
-app.geometry("600x600")
-app.title("register screen")
+    label = ctk.CTkLabel(app, text="register user")
 
-label = ctk.CTkLabel(app, text="register user")
+    label.pack(pady=20)
 
-label.pack(pady=20)
+    frame0 = ctk.CTkFrame(master=app, width=1200)
+    frame0.pack(fill="both", pady=10, padx=10, expand=True)
 
-frame0 = ctk.CTkFrame(master=app,width=1200)
-frame0.pack(fill="both",pady=10, padx=10, expand=True)
+    frame = ctk.CTkFrame(master=frame0, width=1200, fg_color="#020202")
+    frame.pack(pady=10, padx=10, fill="both", expand=True)
 
-frame = ctk.CTkFrame(master=frame0,width=1200,fg_color="#020202")
-frame.pack(pady=10, padx=10, fill="both", expand=True)
+    label = ctk.CTkLabel(master=frame, text="enter user crentials")
+    label.pack(pady=12, padx=10)
 
-label = ctk.CTkLabel(master=frame, text="enter user crentials")
-label.pack(pady=12, padx=10)
+    user_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
+    user_entry.pack(pady=3, padx=15)
+    user_entry.bind("<KeyRelease>", check_username)
+
+    u_valid_text = ctk.CTkLabel(master=frame, text="")
+    u_valid_text.pack(pady=1, padx=10)
+
+    user_pass = ctk.CTkEntry(
+        master=frame, placeholder_text="Password", show="*", width=220
+    )
+    user_pass.pack(pady=12, padx=10)
+
+    confirm_user_pass = ctk.CTkEntry(
+        master=frame, placeholder_text="confirm Password", show="*", width=220
+    )
+    confirm_user_pass.pack(pady=12, padx=10)
+
+    button = ctk.CTkButton(master=frame, text="register", command=register)
+    button.pack(pady=12, padx=10)
+
+    button = ctk.CTkButton(
+        master=frame,
+        text="sign up",
+        bg_color="transparent",
+        fg_color="transparent",
+        width=100,
+    )
+    button.pack(pady=12, padx=10)
+
+    checkbox = ctk.CTkCheckBox(master=frame, text="Remember Me")
+    checkbox.pack(pady=12, padx=10)
+
+    app.mainloop()
 
 
-user_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
-user_entry.pack(pady=3, padx=15)
-user_entry.bind("<KeyRelease>", check_username)
-
-u_valid = ctk.CTkLabel(master=frame, text="")
-u_valid.pack(pady=1, padx=10)
-
-user_pass = ctk.CTkEntry(master=frame, placeholder_text="Password", show="*", width=220)
-user_pass.pack(pady=12, padx=10)
-
-confirm_user_pass = ctk.CTkEntry(
-    master=frame, placeholder_text="confirm Password", show="*", width=220
-)
-confirm_user_pass.pack(pady=12, padx=10)
-
-button = ctk.CTkButton(master=frame, text="register", command=register)
-button.pack(pady=12, padx=10)
-
-button = ctk.CTkButton(
-    master=frame,
-    text="sign up",
-    bg_color="transparent",
-    fg_color="transparent",
-    width=100,
-)
-button.pack(pady=12, padx=10)
-
-checkbox = ctk.CTkCheckBox(master=frame, text="Remember Me")
-checkbox.pack(pady=12, padx=10)
-
-app.mainloop()
+# screen_sign_in(app)

@@ -4,9 +4,9 @@ import pickle
 import mysql.connector
 from PIL import Image
 
+import ui_sign_in
+
 sqlPass = "CH3-CH2-CH2-CH3"
-
-
 def rem_user(username, password, uid):
     d = {"username": username, "password": password, "uid": uid}
     with open("rem_user.pkl", "wb") as f:
@@ -54,10 +54,7 @@ def login():
 
 
 def screen2():
-    new_window = ctk.CTkToplevel(app)
-    new_window.title("New Window")
-    new_window.geometry("350x150")
-    ctk.CTkLabel(new_window, text="main screen stuff.......").pack()
+    ui_sign_in.screen_sign_in(app)
 
 
 # Selecting GUI theme - dark, light , system (for system default)
@@ -67,22 +64,22 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
 root = ctk.CTk()
-root.geometry("600x600")
+root.geometry("450x600")
 root.title("login screen")
 
 bg_img = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"),size=(800,800))
 
-app = ctk.CTkCanvas(root,bg="black",)
+app = ctk.CTkCanvas(root,bg="black")
 app.pack(fill="both", expand=True)
 
-imglabel = ctk.CTkLabel(app, image=bg_img)
+imglabel = ctk.CTkLabel(app,text="", image=bg_img)
 imglabel.place(x=0,y=0)
 
-label = ctk.CTkLabel(app, text="login screen")
+label = ctk.CTkLabel(app, text="Solaris",font=('',32),bg_color="transparent")
 label.pack(pady=20)
 
 
-frame = ctk.CTkFrame(master=app)
+frame = ctk.CTkFrame(master=app,border_width=2,bg_color="transparent",fg_color="transparent")
 frame.pack(pady=20, padx=40, fill="both", expand=True)
 
 label = ctk.CTkLabel(master=frame, text="enter user crentials")
