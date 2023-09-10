@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter.messagebox as tkmb
 import pickle
 import mysql.connector
+from PIL import Image
 
 sqlPass = "CH3-CH2-CH2-CH3"
 
@@ -45,11 +46,11 @@ def login():
 
     if uid != None:
         tkmb.showinfo(
-            title="Login Successful", message="You have logged in Successfully"
+            title="Login Successful", message="logged in Successfully"
         )
         screen2()
     else:
-        tkmb.showerror(title="Login Failed", message="Invalid Username and password")
+        tkmb.showerror(title="Login Failed", message="Invalid Username or password")
 
 
 def screen2():
@@ -65,12 +66,19 @@ ctk.set_appearance_mode("dark")
 # Selecting color theme - blue, green, dark-blue
 ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
-app = ctk.CTk()
-app.geometry("600x600")
-app.title("login screen")
+root = ctk.CTk()
+root.geometry("600x600")
+root.title("login screen")
+
+bg_img = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"),size=(800,800))
+
+app = ctk.CTkCanvas(root,bg="black",)
+app.pack(fill="both", expand=True)
+
+imglabel = ctk.CTkLabel(app, image=bg_img)
+imglabel.place(x=0,y=0)
 
 label = ctk.CTkLabel(app, text="login screen")
-
 label.pack(pady=20)
 
 
@@ -111,4 +119,4 @@ try:
 except FileNotFoundError:
     pass
 
-app.mainloop()
+root.mainloop()

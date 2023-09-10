@@ -56,7 +56,7 @@ player_flipy = False
 
 grass_sound_timer = 0
 
-player_rect = pyg.Rect(100, 100, 5, 13)
+player_rect = pyg.Rect(100, 100, 13, 13)
 
 background_objects = []  # [[0.5,[1,0,30,3]],[1,[7,10,30,100]]]
 
@@ -124,6 +124,10 @@ def add_text(text1, x, y, size):
     textRect = text.get_rect()
     textRect.center = (x // 2, y // 2)
     display.blit(text, textRect)
+
+
+def destroy_astroid():
+    pass
 
 
 def collision_test(rect, tiles):
@@ -248,10 +252,9 @@ while running:  # game loop
         player_flipy = False
 
     if dev_m ==True:
-        print(player_movement)
         add_text(f"{clock.get_fps()}", 350, 330, 10)
         add_text(f"{player_movement}", 350, 370, 10)
-        add_text(f"{moving_up} , {moving_right}", 350, 350, 10)
+        add_text(f"{player_rect}", 350, 350, 10)
 
     player_rect, collisions = move(player_rect, player_movement, tile_rects)
 
