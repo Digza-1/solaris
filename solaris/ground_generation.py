@@ -14,40 +14,24 @@ GREY = (125, 125, 125)
 BROWN = (88, 69, 55)
 RED = (255, 0, 0)
 
-# Player Properties
-PLAYER_WIDTH = 50
-PLAYER_HEIGHT = 99
-PLAYER_SPEED = 6
-player_direction = 0
-
-# Ground dimensions
-GROUND_SIZE = 20
-GROUND_ROWS = HEIGHT // GROUND_SIZE
-GROUND_COLS = WIDTH // GROUND_SIZE
-GROUND_BOTTOM_HALF = int(GROUND_ROWS * 0.6)  # Bottom half of the ground
-
-# Player starting position
-player_x = int(WIDTH * 0.5 - PLAYER_WIDTH * 0.5)
-player_y = HEIGHT - PLAYER_HEIGHT
-
-
 # block values
 EMPTY_BLOCK = 0
-GRASS_BLOCK = 1
-DIRT_BLOCK = 2
-STONE_BLOCK = 3
-PLANT = 5
+ROCK_GREY = 2
+ROCK_RED = 3
+ROCK_BLUE = 1
 
-repeatx1 = 99999
-repeaty1 = 99999
-scale1 = 25.67
-octaves1 = 10
-persistence1 = 0.7
-lacunarity1 = 0.2
-seed1 = random.randint(-1000, 1000)
-CHUNK_SIZE1 = 25
+GREY_OFFSET = 0
+RED_OFFSET = 0
+BLUE_OFFSET = 0
 
-noise_generator = opensimplex.OpenSimplex(seed=seed1)
+GREY_THRESHOLD = 0.2
+RED_THRESHOLD = 0.6
+BLUE_THRESHOLD = 0.3
+
+seed = random.randint(-1000,1000)
+
+noise_generator = opensimplex.OpenSimplex(seed=seed)
+
 # ============================ solaris astroid generation ==============================
 # dict based
 
@@ -57,11 +41,9 @@ def get_pos(x, y, scroll, CHUNK_SIZE):
     target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * 16)))
 
 
-lim1 = 0.4  # temp
-lim2 = 0.2
 
 
-def generate_space(x, y, offset, CHUNK_SIZE):
+def generate_space(x, y, CHUNK_SIZE):
     chunk_data = []
     for y_pos in range(CHUNK_SIZE):
         for x_pos in range(CHUNK_SIZE):
@@ -69,20 +51,45 @@ def generate_space(x, y, offset, CHUNK_SIZE):
             target_y = y * CHUNK_SIZE + y_pos
             tile_type = 0  # nothing
 
-            # Use OpenSimplex noise for 2D terrain generation
+            # openSimplex noise used for generating space
             noise_val = int(noise_generator.noise2(target_x * 0.1, target_y * 0.1) * 5)
 
-            # if lim1 > offset - noise_val:
-            #     tile_type = 2
-
-            if lim2 > offset - noise_val + random.randint(1, 4):
+            
+            # to choose what block must be there
+            if GREY_THRESHOLD > GREY_OFFSET - noise_val + random.randrange(1, 4):
                 tile_type = 2
+
+            if GREY_THRESHOLD > BLUE_OFFSET - noise_val + random.randint(1, 4):
+                tile_type = 1
+
+            if RED_THRESHOLD > RED_OFFSET - noise_val + random.randint(1, 4):
+                tile_type = 3
 
             if tile_type != 0:
                 chunk_data.append([[target_x, target_y], tile_type])
 
     return chunk_data
 
+'''
+def generate_space(x, y, offset, CHUNK_SIZE):
+    chunk_data = []
+    
+    for y_pos in range(y, y + CHUNK_SIZE):
+        for x_pos in range(x, x + CHUNK_SIZE):
+            tile_type = 0  # nothing
+
+            # Use OpenSimplex noise for 2D terrain generation
+            noise_val = int(noise_generator.noise2(x_pos * 0.1, y_pos * 0.1) * 5)
+
+            if _THRESHOLD > offset - noise_val + random.randint(1, 4):
+                tile_type = 2
+
+            if tile_type != 0:
+                chunk_data.append([[x_pos, y_pos], tile_type])
+
+    return chunk_data
+
+'''
 
 # print(generate_space(0, 0, 0, 25))
 
@@ -97,8 +104,7 @@ def generate_space_old1(x, y, offset, CHUNK_SIZE):
             target_y = y * CHUNK_SIZE + y_pos
             tile_type = 0  # nothing
 
-            height = 0  # int(noise.pnoise1(target_x * 0.1, repeat=9999999) * 5)
-
+            height = 0
             if target_y > offset - height:
                 tile_type = 2  # dirt
 

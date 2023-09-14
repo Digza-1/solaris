@@ -30,7 +30,9 @@ app = ctk.CTk()
 app.geometry("600x600")
 app.title("login screen")
 
-navigation_frame = ctk.CTkFrame(app, corner_radius=0)
+main_frame= ctk.CTkFrame(app, corner_radius=2)
+
+navigation_frame = ctk.CTkFrame(main_frame, corner_radius=2)
 navigation_frame.grid(row=0, column=0, sticky="nsew")
 navigation_frame.grid_rowconfigure(4, weight=1)
 

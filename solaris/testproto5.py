@@ -2,7 +2,8 @@
 # file for testing images and chunk generation
 
 import pygame as pyg
-import os, random
+import random
+import mysql.connector
 import ground_generation as gnd
 
 
@@ -22,39 +23,43 @@ moving_down = False
 
 acceleration = 0.1
 scroll = [0, 0]
-dev_m = True #------
-
+dev_m = True  # --------------------
 
 CHUNK_SIZE = 8
 TILE_SIZE = 16
 
-
 SKY_COLOUR = (10, 10, 10)  # (146, 244, 255)
 SKY_COLOUR1 = (59, 135, 164)
-
 
 BG_COLOUR = (14, 14, 15)  # (26, 135, 122)  # (19, 127, 115)  # old(15, 76, 73)
 BG_COLOUR2 = (26, 135, 122)
 
 game_map = {}
 
-CWD = os.getcwd()
+astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_grey_img.set_colorkey((0, 0, 0))
 
-astroid_1_img = pyg.image.load("solaris/assets/rock.png").convert()
-astroid_1_img.set_colorkey((0, 0, 0))
-# astroid_2_img = pyg.image.load("solaris/assets/dirt.png").convert()
-# astroid_3_img = pyg.image.load("solaris/assets/dirt.png").convert()
+astroid_red_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_red_img.set_colorkey((0, 0, 0))
 
-player_img = pyg.image.load("solaris/assets/player.png").convert()
-player_img.set_colorkey((0, 0, 0))
+astroid_blue_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_blue_img.set_colorkey((0, 0, 0))
 
-tile_index = {1: astroid_1_img, 2: astroid_1_img}
 
+player_img1 = pyg.image.load("solaris/assets/player.png").convert()
+player_img1.set_colorkey((0, 0, 0))
+
+player_img2 = pyg.image.load("solaris/assets/player.png").convert()
+player_img2.set_colorkey((0, 0, 0))
+
+player_img3 = pyg.image.load("solaris/assets/player.png").convert()
+player_img3.set_colorkey((0, 0, 0))
+
+tile_index = {1: astroid_grey_img, 2: astroid_red_img, 3: astroid_blue_img}
+player_costume_index = {1: player_img1, 2: player_img2, 3: player_img3}
 
 player_flipx = False
 player_flipy = False
-
-grass_sound_timer = 0
 
 player_rect = pyg.Rect(100, 100, 13, 13)
 
@@ -63,15 +68,77 @@ background_objects = []  # [[0.5,[1,0,30,3]],[1,[7,10,30,100]]]
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
 
+sqlPass = "CH3-CH2-CH2-CH3"
+
+world_id = 0
+player_id = 0
+
+
+def get_settings_sql():
+    mydb = mysql.connector.connect(
+        ost="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    cursor = mydb.cursor()
+
+    q = f"select () from project_solaris where world_id = {world_id} and player_id = {player_id} ;"
+
+    cursor.execute(q)
+    res = cursor.fetchone()
+
 
 def draw_space(tile_rects):
-    for y in range(4):
-        for x in range(4):
-            # get 
+    for y in range(CHUNK_SIZE):
+        for x in range(CHUNK_SIZE):
+            # get
             chunk_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
             chunk_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
 
+            world_x = x + scroll[0]
+            world_y = y + scroll[1]
+            print(world_x, world_y, chunk_x, chunk_y)
+
             target_chunk = str(chunk_x) + "," + str(chunk_y)
+
+            if target_chunk not in game_map:
+                game_map[target_chunk] = gnd.generate_space(
+                    chunk_x, chunk_y, CHUNK_SIZE
+                )
+
+            for tile in game_map[target_chunk]:
+                if len(tile) > 0:
+                    print(tile)
+                    display.blit(
+                        tile_index[tile[1]],
+                        (
+                            tile[0][0] * TILE_SIZE - scroll[0],
+                            tile[0][1] * TILE_SIZE - scroll[1],
+                        ),
+                    )
+
+                if tile[1] in [1, 2, 3]:
+                    tile_rects.append(
+                        pyg.Rect(
+                            tile[0][0] * TILE_SIZE,
+                            tile[0][1] * TILE_SIZE,
+                            TILE_SIZE,
+                            TILE_SIZE,
+                        )
+                    )
+
+
+"""
+def draw_space(tile_rects):
+    x = scroll[0] + player_rect.x
+    y = scroll[1] + player_rect.y
+
+    chunk_x = int(round((x - TILE_SIZE) / (CHUNK_SIZE * TILE_SIZE)))
+    chunk_y = int(round((y - TILE_SIZE) / (CHUNK_SIZE * TILE_SIZE)))
+
+    for y_pos in range(CHUNK_SIZE):
+        for x_pos in range(CHUNK_SIZE):
+            target_x = chunk_x * CHUNK_SIZE + x_pos
+            target_y = chunk_y * CHUNK_SIZE + y_pos
+            target_chunk = f"{chunk_x},{chunk_y}"
 
             if target_chunk not in game_map:
                 game_map[target_chunk] = gnd.generate_space(
@@ -96,6 +163,8 @@ def draw_space(tile_rects):
                             TILE_SIZE,
                         )
                     )
+
+"""
 
 
 def draw_bg():
@@ -124,10 +193,6 @@ def add_text(text1, x, y, size):
     textRect = text.get_rect()
     textRect.center = (x // 2, y // 2)
     display.blit(text, textRect)
-
-
-def destroy_astroid():
-    pass
 
 
 def collision_test(rect, tiles):
@@ -168,13 +233,57 @@ def move(rect, movement, tiles):
     return rect, collision_types
 
 
+def get_block(mx, my, scroll, CHUNK_SIZE, TILE_SIZE):
+    # to convert mouse coords to world coordinates
+    world_x = mx + scroll[0]
+    world_y = my + scroll[1]
+
+    # to calculate the chunk and tile coordinates
+    chunk_x = world_x // (CHUNK_SIZE * TILE_SIZE)
+    chunk_y = world_y // (CHUNK_SIZE * TILE_SIZE)
+    tile_x = (world_x // TILE_SIZE) % CHUNK_SIZE
+    tile_y = (world_y // TILE_SIZE) % CHUNK_SIZE
+
+    print("Chunk Coordinates (chunk_x, chunk_y):", chunk_x, chunk_y)
+    print("Tile Coordinates (tile_x, tile_y):", tile_x, tile_y)
+
+
+def destroy_block(game_map, mx, my, scroll, CHUNK_SIZE, TILE_SIZE):
+    # Convert mouse coordinates to world coordinates
+    world_x = mx + scroll[0]
+    world_y = my + scroll[1]
+
+    # Calculate the chunk and tile coordinates
+    chunk_x = world_x // (CHUNK_SIZE * TILE_SIZE)
+    chunk_y = world_y // (CHUNK_SIZE * TILE_SIZE)
+    tile_x = (world_x // TILE_SIZE) % CHUNK_SIZE
+    tile_y = (world_y // TILE_SIZE) % CHUNK_SIZE
+
+    # Create the chunk identifier
+    chunk_key = f"{chunk_x},{chunk_y}"
+
+    # Check if the chunk exists in the game map
+    if chunk_key in game_map:
+        # Modify the tile in the chunk to an empty tile (tile_type = 0)
+        # game_map[chunk_key][tile_y * CHUNK_SIZE + tile_x][1] = 0
+        print(game_map[chunk_key])
+        for i in range(len(game_map[chunk_key])):
+            try:
+                print(game_map[chunk_key][i])
+                del game_map[chunk_key][i]
+            except:
+                pass
+            # game_map[chunk_key][i][1] = 0
+
+
+def destroy_astroid():
+    pass
+
+
 running = True
 
 while running:  # game loop
     display.fill(SKY_COLOUR)  # clear screen by filling it with blue
-
-    if grass_sound_timer > 0:
-        grass_sound_timer -= 1
 
     # to keep track of absolute x,y positions
     scroll[0] += (player_rect.x - scroll[0] - 152) / 20
@@ -193,6 +302,11 @@ while running:  # game loop
     for event in pyg.event.get():  # event loop
         if event.type == pyg.QUIT:
             running = False
+
+        if event.type == pyg.MOUSEBUTTONUP:
+            mx, my = pyg.mouse.get_pos()
+            get_block(mx, my, scroll, CHUNK_SIZE, TILE_SIZE)
+            destroy_block(game_map, mx, my, scroll, CHUNK_SIZE, TILE_SIZE)
 
         if event.type == pyg.KEYDOWN:
             if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
@@ -237,7 +351,7 @@ while running:  # game loop
 
     if moving_down == True:
         player_movement[1] += acceleration * time_deltatime
-        
+
     # flip image in direction of movement
     if player_movement[0] > 0:
         player_flipx = False
@@ -251,7 +365,7 @@ while running:  # game loop
     if player_movement[1] < 0:
         player_flipy = False
 
-    if dev_m ==True:
+    if dev_m == True:
         add_text(f"{clock.get_fps()}", 350, 330, 10)
         add_text(f"{player_movement}", 350, 370, 10)
         add_text(f"{player_rect}", 350, 350, 10)
@@ -260,7 +374,7 @@ while running:  # game loop
 
     # draw player
     display.blit(
-        pyg.transform.flip(player_img, player_flipx, player_flipy),
+        pyg.transform.flip(player_img1, player_flipx, player_flipy),
         (player_rect.x - scroll[0], player_rect.y - scroll[1]),
     )
 

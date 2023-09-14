@@ -4,14 +4,27 @@ sqlPass = "CH3-CH2-CH2-CH3"
 
 q1 = "create database project_solaris;"
 q2 = "use project_solaris;"
+
 q3 = """create table player_stats 
 ( player_id int primary key,world_id int,
-distance_moved int,depth int,blocks_broken int,blocks_placed int);"""
+distance_moved int,collisions int;"""
 
-q4 = "create table users ( player_id int primary key,username varchar(40) unique,passwd varchar(50) not null);"
-q5 = "create table items ( item_id int primary key,item_name varchar(20) );"
+q4 = '''create table users ( player_id int primary key,username varchar(40) 
+unique,passwd varchar(50) not null);'''
 
-query_list = [q1, q2, q3, q4, q5]
+q5 = '''create table admins ( admin_id int primary key,
+username varchar(40) unique,
+passwd varchar(50) not null);'''
+
+q6 = '''create table game_settings ( player_id int primary key,
+world_id int,
+seed int,
+x_pos int,
+y_pos int,
+difficulty int,
+costume int)'''
+
+query_list = [q1, q2, q3, q4, q5, q6 ]
 
 
 def create_tables():
