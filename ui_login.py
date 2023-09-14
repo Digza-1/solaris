@@ -36,7 +36,7 @@ def load_user():
 
 def check_user(username, passwd):
     mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="proj_test"
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
 
@@ -126,6 +126,5 @@ if autofill_user == True:
     user_entry.insert(0, str(user_info["username"]))  # autofill username passwd
     user_pass.insert(0, str(user_info["password"]))
     checkbox.select()
-
 
 root.mainloop()

@@ -61,9 +61,7 @@ def admin_options():
 
 
 def settings(uname, uid):
-    # Selecting GUI theme - dark, light , system
     ctk.set_appearance_mode("dark")
-    # Selecting color theme - blue, green, dark-blue
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
     app = ctk.CTk()
