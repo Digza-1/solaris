@@ -2,7 +2,6 @@
 # file for testing images and chunk generation
 
 import pygame as pyg
-import random
 import mysql.connector
 import ground_generation as gnd
 
@@ -21,7 +20,7 @@ moving_left = False
 moving_up = False
 moving_down = False
 
-acceleration = 0.1
+speed = 0.1
 scroll = [0, 0]
 dev_m = True  # --------------------
 
@@ -39,10 +38,16 @@ game_map = {}
 astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
 astroid_grey_img.set_colorkey((0, 0, 0))
 
-astroid_red_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_grey2_img = pyg.image.load("solaris/assets/rock2.png").convert()
+astroid_grey2_img.set_colorkey((0, 0, 0))
+
+astroid_red_img = pyg.image.load("solaris/assets/rock3.png").convert()
 astroid_red_img.set_colorkey((0, 0, 0))
 
-astroid_blue_img = pyg.image.load("solaris/assets/rock.png").convert()
+astroid_red2_img = pyg.image.load("solaris/assets/rock5.png").convert()
+astroid_red2_img.set_colorkey((0, 0, 0))
+
+astroid_blue_img = pyg.image.load("solaris/assets/rock4.png").convert()
 astroid_blue_img.set_colorkey((0, 0, 0))
 
 
@@ -55,7 +60,8 @@ player_img2.set_colorkey((0, 0, 0))
 player_img3 = pyg.image.load("solaris/assets/player.png").convert()
 player_img3.set_colorkey((0, 0, 0))
 
-tile_index = {1: astroid_grey_img, 2: astroid_red_img, 3: astroid_blue_img}
+tile_index = {1: astroid_grey_img,4: astroid_grey2_img, 2: astroid_red2_img, 3: astroid_red_img, 5: astroid_blue_img}
+
 player_costume_index = {1: player_img1, 2: player_img2, 3: player_img3}
 
 player_flipx = False
@@ -63,7 +69,6 @@ player_flipy = False
 
 player_rect = pyg.Rect(100, 100, 13, 13)
 
-background_objects = []  # [[0.5,[1,0,30,3]],[1,[7,10,30,100]]]
 
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
@@ -95,7 +100,6 @@ def draw_space(tile_rects):
 
             world_x = x + scroll[0]
             world_y = y + scroll[1]
-            print(world_x, world_y, chunk_x, chunk_y)
 
             target_chunk = str(chunk_x) + "," + str(chunk_y)
 
@@ -105,8 +109,7 @@ def draw_space(tile_rects):
                 )
 
             for tile in game_map[target_chunk]:
-                if len(tile) > 0:
-                    print(tile)
+                if len(tile) > 0 :
                     display.blit(
                         tile_index[tile[1]],
                         (
@@ -170,21 +173,6 @@ def draw_space(tile_rects):
 def draw_bg():
     pyg.draw.rect(display, BG_COLOUR, pyg.Rect(0, 120, 300, 80))
 
-    for background_object in background_objects:
-        obj_rect = pyg.Rect(
-            background_object[1][0] - scroll[0] * background_object[0],
-            background_object[1][1] - scroll[1] * background_object[0],
-            background_object[1][2],
-            background_object[1][3],
-        )
-        if background_object[0] == 0.5:
-            pyg.draw.rect(display, SKY_COLOUR1, obj_rect)
-
-        if background_object[0] == 1:
-            pyg.draw.rect(display, BG_COLOUR2, obj_rect)
-
-        else:
-            pyg.draw.rect(display, BG_COLOUR, obj_rect)
 
 
 def add_text(text1, x, y, size):
@@ -341,16 +329,16 @@ while running:  # game loop
     player_movement = [0, 0]
 
     if moving_right == True:
-        player_movement[0] += acceleration * time_deltatime
+        player_movement[0] += speed * time_deltatime
 
     if moving_left == True:
-        player_movement[0] -= acceleration * time_deltatime
+        player_movement[0] -= speed * time_deltatime
 
     if moving_up == True:
-        player_movement[1] -= acceleration * time_deltatime
+        player_movement[1] -= speed * time_deltatime
 
     if moving_down == True:
-        player_movement[1] += acceleration * time_deltatime
+        player_movement[1] += speed * time_deltatime
 
     # flip image in direction of movement
     if player_movement[0] > 0:

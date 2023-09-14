@@ -9,9 +9,6 @@ def worldgen_options():
     pass
 
 
-def user_options():
-    pass
-
 
 def admin_options():
     pass
@@ -19,10 +16,27 @@ def admin_options():
 
 sqlPass = "CH3-CH2-CH2-CH3"
 
+def save():
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+    q = "update settings set 'difficulty' = "
+    mycursor.execute(q)
+
+    
+
+def reset():
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+
+    pass
 
 def check_admin(admin_id, passwd):
     mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="proj_test"
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
 
@@ -62,20 +76,44 @@ def settings(uname, uid):
     frame = ctk.CTkFrame(master=app)
     frame.pack(pady=20, fill="both", expand=True)
 
-    inFrame = ctk.CTkScrollableFrame(master=frame, width=500,height=350)
+    inFrame = ctk.CTkScrollableFrame(master=frame, width=500, height=350)
     inFrame.pack(padx=20)
 
-    button = ctk.CTkButton(master=inFrame, text="something", command=None)
-    button.pack(pady=15)
+    empty = ctk.CTkLabel(inFrame, text="")
+    empty.pack()
 
-    button = ctk.CTkButton(master=inFrame, text="", command=None)
-    button.pack(pady=15)
+    label = ctk.CTkLabel(inFrame, text="change diffifulty:")
+    label.pack(pady=5)
 
-    button = ctk.CTkButton(master=inFrame, text="", command=None)
-    button.pack(pady=15)
+    difficulty = ctk.CTkOptionMenu(
+        inFrame,
+        font=("", 16),
+        dynamic_resizing=False,
+        values=["easy", "normal", "hard"],
+    )
+    difficulty.pack(pady=10)
 
-    button = ctk.CTkButton(master=inFrame, text="admin settings", command=admin_options)
-    button.pack(pady=15)
+    empty = ctk.CTkLabel(inFrame, text="")
+    empty.pack()
+
+    label = ctk.CTkLabel(inFrame, text="change space craft:")
+    label.pack(pady=5)
+
+    costume = ctk.CTkOptionMenu(
+        inFrame,
+        font=("", 16),
+        dynamic_resizing=False,
+        values=["space craft 1", "space craft 2", "space craft 3"],
+    )
+    costume.pack(pady=10)
+
+    empty = ctk.CTkLabel(inFrame, text="")
+    empty.pack()
+
+    admin_button = ctk.CTkButton(
+        master=inFrame, text="admin settings", font=("", 16), command=admin_options
+    )
+    admin_button.pack(pady=10)
 
     f3 = ctk.CTkFrame(master=frame)
     f3.pack(side="top", pady=20)
@@ -85,7 +123,7 @@ def settings(uname, uid):
         text="reset",
         bg_color="transparent",
         fg_color="transparent",
-        command=None,
+        command=reset,
     )
     button.pack(pady=5, side="left")
 
@@ -94,6 +132,7 @@ def settings(uname, uid):
         text="save",
         bg_color="transparent",
         fg_color="transparent",
+        command=save,
     )
     button.pack(side="right", padx=5)
 

@@ -21,7 +21,7 @@ def get_data(uname, uid):
     )
     mycursor = mydb.cursor()
 
-    query = f"select world_id ,world_name from worlds where id = {uid};"
+    query = f"select world_id ,world_name from worlds where player_id = {uid};"
 
     mycursor.execute(query)
     res = mycursor.fetchall()
