@@ -4,16 +4,6 @@ import tkinter.messagebox as tkmb
 import pickle
 import mysql.connector
 
-
-def worldgen_options():
-    pass
-
-
-
-def admin_options():
-    pass
-
-
 sqlPass = "CH3-CH2-CH2-CH3"
 
 def save():
@@ -21,7 +11,7 @@ def save():
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
-    q = "update settings set 'difficulty' = "
+    q = "update settings set difficulty = "
     mycursor.execute(q)
 
     

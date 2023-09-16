@@ -6,6 +6,7 @@ import mysql.connector
 import ground_generation as gnd
 
 
+
 pyg.init()  # initiates pygame
 pyg.display.set_caption("solaris")
 
@@ -22,7 +23,7 @@ moving_down = False
 
 speed = 0.1
 scroll = [0, 0]
-dev_m = True  # --------------------
+dev_m = False  # --------------------
 
 CHUNK_SIZE = 8
 TILE_SIZE = 16

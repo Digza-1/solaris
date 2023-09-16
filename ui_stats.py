@@ -23,7 +23,7 @@ def get_data(uname, uid):
 
     stats_n = "distance_moved,"
 
-    query = f"select {stats_n} from player_stats where id = {uid};"
+    query = f"select * from player_stats where player_id = {uid};"
 
     mycursor.execute(query)
     res = mycursor.fetchall()

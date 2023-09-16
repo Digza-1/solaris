@@ -3,6 +3,7 @@ import tkinter.messagebox as tkmb
 import pickle
 import mysql.connector
 
+from ui_login import login_screen
 # import settings_ui_script as settingsui
 
 sqlPass = "CH3-CH2-CH2-CH3"
@@ -24,7 +25,7 @@ def rem_user(username, password, uid):
 def check_username(event):
     global user_valid
     mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="proj_test"
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
 
@@ -46,7 +47,7 @@ def check_username(event):
 def register_user(username, passwd):
     global user_valid
     mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="proj_test"
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
 
@@ -58,7 +59,7 @@ def register_user(username, passwd):
         mycursor.execute(q)
         mydb.commit()
 
-        q = f"select id from users where username = '{username}'and passwd = '{passwd}'; "
+        q = f"select player_id from users where username = '{username}'and passwd = '{passwd}'; "
         mycursor.execute(q)
         res = mycursor.fetchone()
 
@@ -109,9 +110,8 @@ def screen2():
     new_window = ctk.CTkToplevel(app)
 
 
-def screen_sign_in(app):
+def screen_sign_up(app):
     global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox
-    # Selecting GUI theme
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
@@ -154,10 +154,11 @@ def screen_sign_in(app):
 
     button = ctk.CTkButton(
         master=frame,
-        text="sign up",
+        text="login instead",
         bg_color="transparent",
         fg_color="transparent",
         width=100,
+        command=login_screen
     )
     button.pack(pady=12, padx=10)
 

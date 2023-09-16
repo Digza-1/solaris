@@ -6,14 +6,7 @@ import mysql.connector
 
 sqlPass = "CH3-CH2-CH2-CH3"
 
-worlds = [
-    [123, "world1"],
-    [430, "new world"],
-    [373, "world2"],
-    [970, "world3"],
-    [260, "aaaa"],
-]
-
+worlds = []
 
 def get_data(uname, uid):
     mydb = mysql.connector.connect(

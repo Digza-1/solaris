@@ -19,18 +19,18 @@ passwd varchar(50) not null);"""
 q5 = """create table game_settings ( player_id int primary key,
 seed int,
 speed int,
-grey_thershold decimal(5,3)
-red_thershold decimal(5,3)
-blue_thershold decimal(5,3)
+grey_thershold decimal(5,3),
+red_thershold decimal(5,3),
+blue_thershold decimal(5,3),
 difficulty varchar(15),
 costume int)
 """
 
 # default settings sql
 q6 = """create table game_default_settings (speed decimal(5,3),
-grey_thershold decimal(5,3)
-red_thershold decimal(5,3)
-blue_thershold decimal(5,3)
+grey_thershold decimal(5,3),
+red_thershold decimal(5,3),
+blue_thershold decimal(5,3),
 difficulty varchar(15),
 costume int)
 """
@@ -43,6 +43,7 @@ x_pos int,
 y_pos int);
 """
 
+# player stats
 q8 = """create table player_stats ( player_id int primary key,
 world_id int,
 distance_moved int,
@@ -52,6 +53,7 @@ collisions int)
 
 inq1 = "insert into users(username,passwd) values('user','user');"
 inq1 = "insert into admins(username,passwd) values('admin','root');"
+
 
 
 query_list = [q1, q2, q3, q4, q5, q6, q7, q8]
