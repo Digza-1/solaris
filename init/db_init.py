@@ -37,7 +37,8 @@ costume int)
 
 # game worlds
 q7 = """create table game_worlds ( player_id int,
-world_id int primary key,
+world_id int primary key auto_increment,
+world_name varchar(40),
 seed int,
 x_pos int,
 y_pos int);
@@ -52,11 +53,27 @@ collisions int)
 """
 
 inq1 = "insert into users(username,passwd) values('user','user');"
-inq1 = "insert into admins(username,passwd) values('admin','root');"
+inq2 = "insert into admins(username,passwd) values('admin','root');"
+
+inq3 = '''insert into game_default_settings(seed int,
+speed,
+grey_thershold,
+red_thershold,
+blue_thershold,
+difficulty,
+costume) values(0.1, 0.25, 0.01, 0.1,'normal');'''
+
+inq4 = '''insert into game_settings(seed int,
+speed,
+grey_thershold,
+red_thershold,
+blue_thershold,
+difficulty,
+costume) values(0.1, 0.25, 0.01, 0.1,'normal');'''
 
 
 
-query_list = [q1, q2, q3, q4, q5, q6, q7, q8]
+query_list = [ q2, q3, q4, q5, q6, q7, q8,inq1, inq2,]
 sqlPass = "CH3-CH2-CH2-CH3"
 
 

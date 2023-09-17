@@ -8,7 +8,7 @@ sqlPass = "CH3-CH2-CH2-CH3"
 
 worlds = []
 
-def get_data(uname, uid):
+def get_world_data(uname, uid):
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project"
     )
@@ -30,7 +30,7 @@ def a(event):
     print(event)
 
 
-def stat_screen(uname, uid):
+def play_screen(uname, uid):
     # Selecting GUI theme - dark, light , system
     ctk.set_appearance_mode("dark")
     # Selecting color theme - blue, green, dark-blue
@@ -131,4 +131,4 @@ def stat_screen(uname, uid):
     app.mainloop()
 
 
-stat_screen(0, 0)
+

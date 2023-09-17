@@ -6,7 +6,6 @@ import mysql.connector
 import ground_generation as gnd
 
 
-
 pyg.init()  # initiates pygame
 pyg.display.set_caption("solaris")
 
@@ -79,14 +78,14 @@ sqlPass = "CH3-CH2-CH2-CH3"
 world_id = 0
 player_id = 0
 
-
 def get_settings_sql():
     mydb = mysql.connector.connect(
         ost="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     cursor = mydb.cursor()
 
-    q = f"select () from project_solaris where world_id = {world_id} and player_id = {player_id} ;"
+    q = f'''select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,
+    costume) from project_solaris where world_id = {world_id} and player_id = {player_id} ;'''
 
     cursor.execute(q)
     res = cursor.fetchone()

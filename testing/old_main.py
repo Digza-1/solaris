@@ -18,7 +18,6 @@ autofill_user = False
 user_info = None
 uid = None
 app = None
-worlds = []
 
 sqlPass = "CH3-CH2-CH2-CH3"
 
@@ -50,7 +49,7 @@ def load_user():
 
     if user_info != None:
         autofill_user = True
-        uid = user_info["uid"][0]
+        uid = user_info["player_id"]
 
 
 def check_user(username, passwd):
@@ -69,9 +68,6 @@ def check_user(username, passwd):
     mydb.close()
 
     return res
-
-def close_screen(app):
-    app.destroy()
 
 
 def login():
@@ -133,7 +129,7 @@ def login_screen():
         bg_color="transparent",
         fg_color="transparent",
         width=100,
-        command=sign_up_screen,
+        command=None,
     )
     button.pack(pady=12, padx=10)
 
@@ -253,20 +249,20 @@ def screen2():
     new_window = ctk.CTkToplevel(app)
 
 
-def sign_up_screen():
+def sign_up_screen(app):
     global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
-    app_s = ctk.CTk()
-    app_s.geometry("450x600")
-    app_s.title("sign up")
+    app = ctk.CTk()
+    app.geometry("450x600")
+    app.title("sign up")
 
-    label = ctk.CTkLabel(app_s, text="register user")
+    label = ctk.CTkLabel(app, text="register user")
 
     label.pack(pady=20)
 
-    frame0 = ctk.CTkFrame(master=app_s, width=1200)
+    frame0 = ctk.CTkFrame(master=app, width=1200)
     frame0.pack(fill="both", pady=10, padx=10, expand=True)
 
     frame = ctk.CTkFrame(master=frame0, width=1200, fg_color="#020202")
@@ -297,16 +293,18 @@ def sign_up_screen():
 
     button = ctk.CTkButton(
         master=frame,
-        text="back to login",
+        text="login instead",
         bg_color="transparent",
         fg_color="transparent",
         width=100,
-        command=app_s.destroy,
+        command=login_screen,
     )
     button.pack(pady=12, padx=10)
 
+    checkbox = ctk.CTkCheckBox(master=frame, text="Remember Me")
+    checkbox.pack(pady=12, padx=10)
 
-    app_s.mainloop()
+    app.mainloop()
 
 
 # -----------------------settings--------------------------
@@ -320,7 +318,6 @@ def save_user_settings():
     mycursor = mydb.cursor()
     q = "update settings set difficulty = '{}';".format(difficulty)
     mycursor.execute(q)
-    mydb.commit()
 
 
 def reset():
@@ -348,8 +345,6 @@ def check_admin(admin_id, passwd):
 
     return res
 
-admin = False
-difficulty_value = 0
 
 def admin_options():
     admin_id = ctk.CTkInputDialog(text="enter admin id:", title="admin id")
@@ -359,7 +354,7 @@ def admin_options():
     print("passwd:", admin_pass.get_input())
 
     acc = check_admin(admin_id, admin_pass)
-    admin = True
+
 
 def settings_screen():
     app = ctk.CTk()
@@ -385,7 +380,6 @@ def settings_screen():
         inFrame,
         font=("", 16),
         dynamic_resizing=False,
-        variable=difficulty_value,
         values=["easy", "normal", "hard"],
     )
     difficulty.pack(pady=10)
@@ -403,19 +397,14 @@ def settings_screen():
         values=["space craft 1", "space craft 2", "space craft 3"],
     )
     costume.pack(pady=10)
-    if admin == True:
-        pass
-        
-    else:
-        empty = ctk.CTkLabel(inFrame, text="")
-        empty.pack()
 
-        admin_button = ctk.CTkButton(
-            master=inFrame, text="admin settings", font=("", 16), command=admin_options
-        )
-        admin_button.pack(pady=10)
-    
+    empty = ctk.CTkLabel(inFrame, text="")
+    empty.pack()
 
+    admin_button = ctk.CTkButton(
+        master=inFrame, text="admin settings", font=("", 16), command=admin_options
+    )
+    admin_button.pack(pady=10)
 
     f3 = ctk.CTkFrame(master=frame)
     f3.pack(side="top", pady=20)
@@ -438,9 +427,6 @@ def settings_screen():
     )
     button.pack(side="right", padx=5)
 
-    
-        
-
     button = ctk.CTkButton(
         master=frame,
         text="back",
@@ -454,19 +440,18 @@ def settings_screen():
     app.mainloop()
 
 
-
+worlds = []
 
 
 def get_worlds_data():
     global uid
-    print(uid)
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
 
-    query = f"select world_id ,world_name from game_worlds where player_id = {uid};"
+    query = f"select world_id ,world_name from worlds where player_id = {uid};"
     mycursor.execute(query)
 
     res = mycursor.fetchall()
@@ -475,139 +460,10 @@ def get_worlds_data():
     mydb.close()
 
     return res
-def convert_num(str1):
-    num=0
-    for i in str1:
-        num+=ord(i)*10
-    print(num)
-    return num
 
 
-def create_world():
-    global uid
+# ---------------------- stats screen ------------------
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    name_inp = ctk.CTkInputDialog(text="enter world name: ", title="world name")
-    world_name = name_inp.get_input()
-
-    seed_inp = ctk.CTkInputDialog(text="enter worlds seed:", title="seed")
-
-    seed = seed_inp.get_input()
-    seed = convert_num(seed)
-
-    print("w name,seed:",world_name,seed)
-
-    query = f"insert into game_worlds (world_name,seed,player_id) values('{world_name}',{seed},{uid});"
-    mycursor.execute(query)
-    mydb.commit()
-    
-    mycursor.close()
-    mydb.close()
-    worlds = get_worlds_data()
-
-
-
-# ---------------------- play screen ------------------
-
-def play_screen():
-    global worlds
-
-    app = ctk.CTk()
-    app.geometry("600x600")
-    app.title("stats screen")
-
-    label = ctk.CTkLabel(app, text="statistics")
-    label.pack(pady=20)
-
-    frame = ctk.CTkScrollableFrame(master=app, width=440)
-    frame.pack(pady=10, padx=10, fill="y", expand=True)
-
-    worlds = get_worlds_data()
-    worlds_dict = {}
-
-    index = 0
-    for w_id, w_na in worlds:
-        worlds_dict[index] = [w_id, w_na]
-        index += 1
-
-    print(list(worlds_dict.items()))
-    for index ,w_temp in worlds_dict.items():
-        w_id,w_na = w_temp
-        
-        print(w_id,w_na)
-        in_frame = ctk.CTkFrame(frame, fg_color="#4ec999", bg_color="black")
-        in_frame.pack(pady=5, fill="x")
-
-        b1 = ctk.CTkLabel(master=in_frame, text=f"{w_na}", font=("", 25))
-        b1.pack(side="top", pady=1)
-
-        b2 = ctk.CTkLabel(master=in_frame, text=f"id: {w_id} ", font=("", 18))
-        b2.pack(side="top", pady=2, padx=10)
-
-    buttons_frame = ctk.CTkFrame(master=app, width=300)
-    buttons_frame.pack()
-
-    ub_frame = ctk.CTkFrame(master=buttons_frame, width=300, height=10)
-    ub_frame.pack(pady=15)
-
-    back_button = ctk.CTkButton(
-        master=ub_frame,
-        text="back",
-        bg_color="transparent",
-        fg_color="transparent",
-        width=200,
-        command=None,
-    )
-    back_button.pack(pady=5, padx=2, side="left")
-
-    new_world_button = ctk.CTkButton(
-        master=ub_frame,
-        text="new world",
-        # bg_color="transparent",
-        fg_color="transparent",
-        width=200,
-        command=create_world,
-    )
-
-    new_world_button.pack(pady=5, padx=2, side="right")
-
-    #
-
-    lb_frame = ctk.CTkFrame(master=buttons_frame, width=300)
-    lb_frame.pack()
-
-    back_button = ctk.CTkButton(
-        master=lb_frame,
-        text="back",
-        bg_color="transparent",
-        fg_color="transparent",
-        command=None,
-    )
-    back_button.pack(pady=5, side="left")
-
-    delete_button = ctk.CTkButton(
-        master=lb_frame,
-        text="delete",
-        bg_color="transparent",
-        fg_color="transparent",
-    )
-
-    delete_button.pack(side="right", padx=5)
-
-    stats_button = ctk.CTkButton(
-        master=lb_frame,
-        text="stats",
-        # bg_color="transparent",
-        fg_color="transparent",
-        command=None,
-    )
-    stats_button.pack(side="right", pady=5)
-
-    app.mainloop()
 
 # ---------------------stats screen -------------------------------
 def get_stats_data(uid):
@@ -695,40 +551,35 @@ def stats_screen():
 
 def title_screen():
     app = ctk.CTk()
-    app.geometry("450x400")
+    app.geometry("450x600")
     app.title("screen")
 
-    bg_lablel = ctk.CTkLabel(app,image=bg_img,text="")
-    bg_lablel.place(x=0,y=0)
-
-    label = ctk.CTkLabel(app,font=("",32) ,text="Solaris")
+    label = ctk.CTkLabel(app, text="pyrraria")
     label.pack(pady=20)
 
     frame = ctk.CTkFrame(master=app)
-    frame.pack(pady=1, padx=1, fill="none", expand=True)
+    frame.pack(pady=10, padx=10, fill="both", expand=True)
 
     fr3 = ctk.CTkFrame(master=frame)
-    fr3.pack(pady=2)
-    
+    fr3.pack(pady=15)
 
-    settings_button = ctk.CTkButton(master=fr3, text="Play", command=play_screen)
-    settings_button.pack(pady=10)
+    settings_button = ctk.CTkButton(master=fr3, text="Play", command=None)
+    settings_button.pack(pady=15)
 
     fr1 = ctk.CTkFrame(master=frame)
     fr1.pack()
     # buttons load game, new game
     load_button = ctk.CTkButton(master=fr1, text="options", command=None)
-    load_button.pack(side="left", pady=10, padx=10)
+    load_button.pack(side="left", pady=15, padx=5)
 
     new_button = ctk.CTkButton(master=fr1, text="quit game", command=None)
-    new_button.pack(side="right", pady=10, padx=10)
+    new_button.pack(side="right", pady=15, padx=5)
 
     app.mainloop()
 
 
 load_user()
 print(user_info)
-
 if user_info == None:
     login_screen()
 else:

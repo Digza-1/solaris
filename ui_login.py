@@ -67,7 +67,7 @@ def login():
 
 
 def sign_up_screen():
-    ui_sign_up.screen_sign_up(app)
+    screen_sign_up(app)
 
 def login_screen():
     global app,user_entry,user_info,user_pass,checkbox
