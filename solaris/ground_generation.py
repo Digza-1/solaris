@@ -37,7 +37,6 @@ noise_generator = opensimplex.OpenSimplex(seed=seed)
 
 # ============================ solaris astroid space generation ==============================
 
-
 def get_pos(x, y, scroll, CHUNK_SIZE):
     target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * 16)))
     target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * 16)))
@@ -75,6 +74,4 @@ def generate_space(x, y, CHUNK_SIZE):
                 chunk_data.append([[target_x, target_y], tile_type])
 
     return chunk_data
-
-
 # print(generate_space(0, 0, 0, 25))

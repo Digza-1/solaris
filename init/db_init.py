@@ -72,8 +72,8 @@ difficulty,
 costume) values(0.1, 0.25, 0.01, 0.1,'normal');'''
 
 
-
-query_list = [ q2, q3, q4, q5, q6, q7, q8,inq1, inq2,]
+#q2, q3, q4, q5, q6, q7, q8
+query_list = [inq1, inq2,inq3, inq4]
 sqlPass = "CH3-CH2-CH2-CH3"
 
 

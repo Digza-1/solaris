@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter.messagebox as tkmb
 import pickle
 import mysql.connector
+from random import randint
 from PIL import Image
 
 bg_img = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
@@ -19,7 +20,10 @@ user_info = None
 uid = None
 app = None
 worlds = []
-
+difficulty = None
+diff_dict = {'easy':1,'normal':2,'hard':3}
+refresh_worlds = True
+world_var = None
 sqlPass = "CH3-CH2-CH2-CH3"
 
 ctk.set_appearance_mode("dark")
@@ -69,6 +73,7 @@ def check_user(username, passwd):
     mydb.close()
 
     return res
+
 
 def close_screen(app):
     app.destroy()
@@ -305,7 +310,6 @@ def sign_up_screen():
     )
     button.pack(pady=12, padx=10)
 
-
     app_s.mainloop()
 
 
@@ -348,8 +352,10 @@ def check_admin(admin_id, passwd):
 
     return res
 
+
 admin = False
-difficulty_value = 0
+difficulty_value = None
+
 
 def admin_options():
     admin_id = ctk.CTkInputDialog(text="enter admin id:", title="admin id")
@@ -361,11 +367,17 @@ def admin_options():
     acc = check_admin(admin_id, admin_pass)
     admin = True
 
+
 def settings_screen():
+    global difficulty_value, app
+
+    
+
     app = ctk.CTk()
     app.geometry("450x600")
     app.title("login screen")
-
+    difficulty_value = ctk.Variable(app)
+    difficulty_value.set('normal')
     label = ctk.CTkLabel(app, text="settings")
     label.pack(pady=20, padx=20)
 
@@ -389,7 +401,7 @@ def settings_screen():
         values=["easy", "normal", "hard"],
     )
     difficulty.pack(pady=10)
-
+    difficulty = diff_dict.get(difficulty_value.get())
     empty = ctk.CTkLabel(inFrame, text="")
     empty.pack()
 
@@ -405,7 +417,7 @@ def settings_screen():
     costume.pack(pady=10)
     if admin == True:
         pass
-        
+
     else:
         empty = ctk.CTkLabel(inFrame, text="")
         empty.pack()
@@ -414,8 +426,6 @@ def settings_screen():
             master=inFrame, text="admin settings", font=("", 16), command=admin_options
         )
         admin_button.pack(pady=10)
-    
-
 
     f3 = ctk.CTkFrame(master=frame)
     f3.pack(side="top", pady=20)
@@ -438,9 +448,6 @@ def settings_screen():
     )
     button.pack(side="right", padx=5)
 
-    
-        
-
     button = ctk.CTkButton(
         master=frame,
         text="back",
@@ -452,9 +459,6 @@ def settings_screen():
     button.pack(side="left", pady=5)
 
     app.mainloop()
-
-
-
 
 
 def get_worlds_data():
@@ -475,10 +479,12 @@ def get_worlds_data():
     mydb.close()
 
     return res
+
+
 def convert_num(str1):
-    num=0
+    num = 0
     for i in str1:
-        num+=ord(i)*10
+        num += ord(i) * 10
     print(num)
     return num
 
@@ -495,26 +501,29 @@ def create_world():
     world_name = name_inp.get_input()
 
     seed_inp = ctk.CTkInputDialog(text="enter worlds seed:", title="seed")
-
     seed = seed_inp.get_input()
-    seed = convert_num(seed)
+    if world_name != None:
+        if seed == None:
+            seed = randint(-5000,5000)
+        seed = convert_num(seed)
 
-    print("w name,seed:",world_name,seed)
+        print("w name,seed:", world_name, seed)
 
-    query = f"insert into game_worlds (world_name,seed,player_id) values('{world_name}',{seed},{uid});"
-    mycursor.execute(query)
-    mydb.commit()
-    
-    mycursor.close()
-    mydb.close()
-    worlds = get_worlds_data()
+        query = f"insert into game_worlds (world_name,seed,player_id) values('{world_name}',{seed},{uid});"
+        mycursor.execute(query)
+        mydb.commit()
 
+        mycursor.close()
+        mydb.close()
+        worlds = get_worlds_data()
 
+def play_world():
+    pass
 
-# ---------------------- play screen ------------------
+# ---------------------- play screen -------------------
 
 def play_screen():
-    global worlds
+    global worlds,refresh_worlds, world_var
 
     app = ctk.CTk()
     app.geometry("600x600")
@@ -526,27 +535,23 @@ def play_screen():
     frame = ctk.CTkScrollableFrame(master=app, width=440)
     frame.pack(pady=10, padx=10, fill="y", expand=True)
 
-    worlds = get_worlds_data()
-    worlds_dict = {}
+    if refresh_worlds == True:
+        worlds = get_worlds_data()
 
-    index = 0
-    for w_id, w_na in worlds:
-        worlds_dict[index] = [w_id, w_na]
-        index += 1
+        # Create an IntVar to manage the selected world
+        world_var = ctk.IntVar()
+        for w_id, w_na in worlds:
+            in_frame = ctk.CTkRadioButton(
+                frame,
+                text=f"{w_na} \n id: {w_id}",
+                font=("", 25),
+                fg_color="#4ec999",
+                variable=world_var,
+                value=w_id,
+            )
+            in_frame.pack(pady=5, fill="x")
 
-    print(list(worlds_dict.items()))
-    for index ,w_temp in worlds_dict.items():
-        w_id,w_na = w_temp
-        
-        print(w_id,w_na)
-        in_frame = ctk.CTkFrame(frame, fg_color="#4ec999", bg_color="black")
-        in_frame.pack(pady=5, fill="x")
-
-        b1 = ctk.CTkLabel(master=in_frame, text=f"{w_na}", font=("", 25))
-        b1.pack(side="top", pady=1)
-
-        b2 = ctk.CTkLabel(master=in_frame, text=f"id: {w_id} ", font=("", 18))
-        b2.pack(side="top", pady=2, padx=10)
+        #    
 
     buttons_frame = ctk.CTkFrame(master=app, width=300)
     buttons_frame.pack()
@@ -554,15 +559,15 @@ def play_screen():
     ub_frame = ctk.CTkFrame(master=buttons_frame, width=300, height=10)
     ub_frame.pack(pady=15)
 
-    back_button = ctk.CTkButton(
+    play_button = ctk.CTkButton(
         master=ub_frame,
-        text="back",
+        text="play",
         bg_color="transparent",
         fg_color="transparent",
         width=200,
-        command=None,
+        command= play_world
     )
-    back_button.pack(pady=5, padx=2, side="left")
+    play_button.pack(pady=5, padx=2, side="left")
 
     new_world_button = ctk.CTkButton(
         master=ub_frame,
@@ -575,8 +580,6 @@ def play_screen():
 
     new_world_button.pack(pady=5, padx=2, side="right")
 
-    #
-
     lb_frame = ctk.CTkFrame(master=buttons_frame, width=300)
     lb_frame.pack()
 
@@ -585,7 +588,7 @@ def play_screen():
         text="back",
         bg_color="transparent",
         fg_color="transparent",
-        command=None,
+        command=app.destroy,
     )
     back_button.pack(pady=5, side="left")
 
@@ -594,6 +597,7 @@ def play_screen():
         text="delete",
         bg_color="transparent",
         fg_color="transparent",
+        command=None#delete_world
     )
 
     delete_button.pack(side="right", padx=5)
@@ -603,11 +607,12 @@ def play_screen():
         text="stats",
         # bg_color="transparent",
         fg_color="transparent",
-        command=None,
+        command=stats_screen,
     )
     stats_button.pack(side="right", pady=5)
 
     app.mainloop()
+
 
 # ---------------------stats screen -------------------------------
 def get_stats_data(uid):
@@ -637,7 +642,7 @@ stat_d = get_stats_data(uid)
 
 
 def stats_screen():
-    stat_li = get_stats_data()
+    stat_li = get_stats_data(uid)
     print(stat_li)
     stats_d = {}
 
@@ -698,10 +703,10 @@ def title_screen():
     app.geometry("450x400")
     app.title("screen")
 
-    bg_lablel = ctk.CTkLabel(app,image=bg_img,text="")
-    bg_lablel.place(x=0,y=0)
+    bg_lablel = ctk.CTkLabel(app, image=bg_img, text="")
+    bg_lablel.place(x=0, y=0)
 
-    label = ctk.CTkLabel(app,font=("",32) ,text="Solaris")
+    label = ctk.CTkLabel(app, font=("", 32), text="Solaris")
     label.pack(pady=20)
 
     frame = ctk.CTkFrame(master=app)
@@ -709,7 +714,6 @@ def title_screen():
 
     fr3 = ctk.CTkFrame(master=frame)
     fr3.pack(pady=2)
-    
 
     settings_button = ctk.CTkButton(master=fr3, text="Play", command=play_screen)
     settings_button.pack(pady=10)
@@ -717,10 +721,10 @@ def title_screen():
     fr1 = ctk.CTkFrame(master=frame)
     fr1.pack()
     # buttons load game, new game
-    load_button = ctk.CTkButton(master=fr1, text="options", command=None)
+    load_button = ctk.CTkButton(master=fr1, text="options", command=settings_screen)
     load_button.pack(side="left", pady=10, padx=10)
 
-    new_button = ctk.CTkButton(master=fr1, text="quit game", command=None)
+    new_button = ctk.CTkButton(master=fr1, text="quit game", command=app.destroy)
     new_button.pack(side="right", pady=10, padx=10)
 
     app.mainloop()

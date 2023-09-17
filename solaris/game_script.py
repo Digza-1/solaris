@@ -128,51 +128,8 @@ def draw_space(tile_rects):
                         )
                     )
 
-
-"""
-def draw_space(tile_rects):
-    x = scroll[0] + player_rect.x
-    y = scroll[1] + player_rect.y
-
-    chunk_x = int(round((x - TILE_SIZE) / (CHUNK_SIZE * TILE_SIZE)))
-    chunk_y = int(round((y - TILE_SIZE) / (CHUNK_SIZE * TILE_SIZE)))
-
-    for y_pos in range(CHUNK_SIZE):
-        for x_pos in range(CHUNK_SIZE):
-            target_x = chunk_x * CHUNK_SIZE + x_pos
-            target_y = chunk_y * CHUNK_SIZE + y_pos
-            target_chunk = f"{chunk_x},{chunk_y}"
-
-            if target_chunk not in game_map:
-                game_map[target_chunk] = gnd.generate_space(
-                    chunk_x, chunk_y, 0, CHUNK_SIZE
-                )
-
-            for tile in game_map[target_chunk]:
-                display.blit(
-                    tile_index[tile[1]],
-                    (
-                        tile[0][0] * TILE_SIZE - scroll[0],
-                        tile[0][1] * TILE_SIZE - scroll[1],
-                    ),
-                )
-
-                if tile[1] in [1, 2]:
-                    tile_rects.append(
-                        pyg.Rect(
-                            tile[0][0] * TILE_SIZE,
-                            tile[0][1] * TILE_SIZE,
-                            TILE_SIZE,
-                            TILE_SIZE,
-                        )
-                    )
-
-"""
-
-
 def draw_bg():
     pyg.draw.rect(display, BG_COLOUR, pyg.Rect(0, 120, 300, 80))
-
 
 
 def add_text(text1, x, y, size):

@@ -47,7 +47,7 @@ def stat_screen(uname, uid):
 
     # Create an IntVar to manage the selected world
     world_var = tk.IntVar()
-
+    print(worlds,'\n')
     for w_id, w_na in worlds:
         in_frame = ctk.CTkRadioButton(
             frame,
