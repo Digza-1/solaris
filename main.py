@@ -7,7 +7,8 @@ from PIL import Image
 
 bg_img = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
 
-bg_img2 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(80, 80))
+bg_img2 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
+
 chat_image = (
     None  # ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(80, 80))
 )
@@ -18,13 +19,17 @@ add_user_image = None  # ctk.CTkImage(
 autofill_user = False
 user_info = None
 uid = None
-app = None
+app1 = ctk.CTk()
+app_pl = None
+
 worlds = []
 difficulty = None
-diff_dict = {'easy':1,'normal':2,'hard':3}
+diff_dict = {"easy": 1, "normal": 2, "hard": 3}
 refresh_worlds = True
 world_var = None
 sqlPass = "CH3-CH2-CH2-CH3"
+
+exit_screens = False
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("theme\solaris_theme_dark.json")
@@ -75,11 +80,18 @@ def check_user(username, passwd):
     return res
 
 
-def close_screen(app):
-    app.destroy()
+def close_screen():
+    global app1
+    app1.destroy()
+
+
+def close_root_screen():
+    global exit_screens
+    exit_screens = True
 
 
 def login():
+    global uname, passw, checkbox
     uname = user_entry.get()
     passw = user_pass.get()
     player_id = check_user(uname, passw)
@@ -89,16 +101,17 @@ def login():
 
     if player_id != None:
         tkmb.showinfo(title="Login Successful", message="logged in Successfully")
+        title_screen()
     else:
         tkmb.showerror(title="Login Failed", message="Invalid Username or password")
 
 
 # --------------------------login screen --------------------------
 def login_screen():
-    global app, user_entry, user_info, user_pass, checkbox
+    global user_entry, user_info, user_pass, checkbox
     load_user()
 
-    root = ctk.CTk()
+    root = ctk.CTkToplevel()
     root.geometry("450x600")
     root.title("login screen")
 
@@ -156,7 +169,7 @@ def login_screen():
 # ----------------------sign in------------------------------
 
 user_valid = False
-app = None
+
 user_pass = None
 user_entry = None
 u_valid_text = None
@@ -241,7 +254,7 @@ def register():
                     title="registration Successful",
                     message="You have registered Successfully",
                 )
-                screen2()
+
         else:
             tkmb.showerror(
                 title="registration Failed",
@@ -254,28 +267,27 @@ def register():
         )
 
 
-def screen2():
-    new_window = ctk.CTkToplevel(app)
-
-
 def sign_up_screen():
     global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
-    app_s = ctk.CTk()
+    app_s = ctk.CTkToplevel()
     app_s.geometry("450x600")
     app_s.title("sign up")
 
-    label = ctk.CTkLabel(app_s, text="register user")
+    bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
+    label = ctk.CTkLabel(app_s, image=bg_img3, text="")
+    label.place(x=0, y=0)
 
+    label = ctk.CTkLabel(app1, font=("", 32), text="sign up")
     label.pack(pady=20)
 
-    frame0 = ctk.CTkFrame(master=app_s, width=1200)
-    frame0.pack(fill="both", pady=10, padx=10, expand=True)
+    frame0 = ctk.CTkFrame(master=app_s, height=570, width=400)
+    frame0.pack(fill="x", pady=10, padx=10, expand=False)
 
-    frame = ctk.CTkFrame(master=frame0, width=1200, fg_color="#020202")
-    frame.pack(pady=10, padx=10, fill="both", expand=True)
+    frame = ctk.CTkFrame(master=frame0, height=570, width=400, fg_color="#020202")
+    frame.pack(pady=10, padx=10, fill="x", expand=False)
 
     label = ctk.CTkLabel(master=frame, text="enter user crentials")
     label.pack(pady=12, padx=10)
@@ -308,7 +320,7 @@ def sign_up_screen():
         width=100,
         command=app_s.destroy,
     )
-    button.pack(pady=12, padx=10)
+    button.pack(pady=20, padx=10)
 
     app_s.mainloop()
 
@@ -369,15 +381,13 @@ def admin_options():
 
 
 def settings_screen():
-    global difficulty_value, app
+    global difficulty_value
 
-    
-
-    app = ctk.CTk()
+    app = ctk.CTkToplevel()
     app.geometry("450x600")
-    app.title("login screen")
+    app.title("settings screen")
     difficulty_value = ctk.Variable(app)
-    difficulty_value.set('normal')
+    difficulty_value.set("normal")
     label = ctk.CTkLabel(app, text="settings")
     label.pack(pady=20, padx=20)
 
@@ -453,12 +463,12 @@ def settings_screen():
         text="back",
         # bg_color="transparent",
         fg_color="transparent",
-        command=None,
+        command=app.destroy,
     )
 
     button.pack(side="left", pady=5)
 
-    app.mainloop()
+    # app.mainloop()
 
 
 def get_worlds_data():
@@ -490,7 +500,7 @@ def convert_num(str1):
 
 
 def create_world():
-    global uid
+    global uid, app_pl
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
@@ -504,7 +514,7 @@ def create_world():
     seed = seed_inp.get_input()
     if world_name != None:
         if seed == None:
-            seed = randint(-5000,5000)
+            seed = randint(-5000, 5000)
         seed = convert_num(seed)
 
         print("w name,seed:", world_name, seed)
@@ -515,24 +525,65 @@ def create_world():
 
         mycursor.close()
         mydb.close()
-        worlds = get_worlds_data()
+
+        app_pl.update()
+        app_pl.update_idletasks()
+
+
+def delete_world():
+    global uid, app_pl
+
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+
+    name_inp = ctk.CTkInputDialog(text="enter world name: ", title="world name")
+    world_name = name_inp.get_input()
+
+    seed_inp = ctk.CTkInputDialog(text="enter worlds seed:", title="seed")
+    seed = seed_inp.get_input()
+    if world_name != None:
+        if seed == None:
+            seed = randint(-5000, 5000)
+        seed = convert_num(seed)
+
+        print("w name,seed:", world_name, seed)
+
+        query = f"insert into game_worlds (world_name,seed,player_id) values('{world_name}',{seed},{uid});"
+        mycursor.execute(query)
+        mydb.commit()
+
+        mycursor.close()
+        mydb.close()
+
+        app_pl.update()
+        app_pl.update_idletasks()
+
 
 def play_world():
-    pass
+    import solaris.game_script
+
 
 # ---------------------- play screen -------------------
 
+
 def play_screen():
-    global worlds,refresh_worlds, world_var
+    global worlds, refresh_worlds, world_var, app_pl
 
-    app = ctk.CTk()
-    app.geometry("600x600")
-    app.title("stats screen")
+    app_pl = ctk.CTkToplevel()
+    app_pl.geometry("600x600")
+    app_pl.title("play screen")
 
-    label = ctk.CTkLabel(app, text="statistics")
+    label = ctk.CTkLabel(app_pl, text="play")
     label.pack(pady=20)
 
-    frame = ctk.CTkScrollableFrame(master=app, width=440)
+    bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
+
+    label = ctk.CTkLabel(app_pl, image=bg_img3, text="")
+    label.place(x=0, y=0)
+
+    frame = ctk.CTkScrollableFrame(master=app_pl, width=440)
     frame.pack(pady=10, padx=10, fill="y", expand=True)
 
     if refresh_worlds == True:
@@ -551,9 +602,9 @@ def play_screen():
             )
             in_frame.pack(pady=5, fill="x")
 
-        #    
+        #
 
-    buttons_frame = ctk.CTkFrame(master=app, width=300)
+    buttons_frame = ctk.CTkFrame(master=app_pl, width=300)
     buttons_frame.pack()
 
     ub_frame = ctk.CTkFrame(master=buttons_frame, width=300, height=10)
@@ -565,7 +616,7 @@ def play_screen():
         bg_color="transparent",
         fg_color="transparent",
         width=200,
-        command= play_world
+        command=play_world,
     )
     play_button.pack(pady=5, padx=2, side="left")
 
@@ -588,7 +639,7 @@ def play_screen():
         text="back",
         bg_color="transparent",
         fg_color="transparent",
-        command=app.destroy,
+        command=app_pl.destroy,
     )
     back_button.pack(pady=5, side="left")
 
@@ -597,7 +648,7 @@ def play_screen():
         text="delete",
         bg_color="transparent",
         fg_color="transparent",
-        command=None#delete_world
+        command=delete_world,  # delete_world
     )
 
     delete_button.pack(side="right", padx=5)
@@ -611,7 +662,7 @@ def play_screen():
     )
     stats_button.pack(side="right", pady=5)
 
-    app.mainloop()
+    # app.mainloop()
 
 
 # ---------------------stats screen -------------------------------
@@ -646,7 +697,7 @@ def stats_screen():
     print(stat_li)
     stats_d = {}
 
-    app = ctk.CTk()
+    app = ctk.CTkToplevel()
     app.geometry("450x600")
     app.title("stats screen")
 
@@ -694,22 +745,23 @@ def stats_screen():
     )
 
     button.pack(side="top", pady=30)
-
-    app.mainloop()
+    # app.mainloop()
 
 
 def title_screen():
-    app = ctk.CTk()
-    app.geometry("450x400")
-    app.title("screen")
+    app1 = ctk.CTkToplevel()
+    app1.geometry("450x400")
+    app1.title("title screen")
 
-    bg_lablel = ctk.CTkLabel(app, image=bg_img, text="")
+    bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
+
+    bg_lablel = ctk.CTkLabel(app1, image=bg_img3, text="")
     bg_lablel.place(x=0, y=0)
 
-    label = ctk.CTkLabel(app, font=("", 32), text="Solaris")
+    label = ctk.CTkLabel(app1, font=("", 32), text="Solaris")
     label.pack(pady=20)
 
-    frame = ctk.CTkFrame(master=app)
+    frame = ctk.CTkFrame(master=app1)
     frame.pack(pady=1, padx=1, fill="none", expand=True)
 
     fr3 = ctk.CTkFrame(master=frame)
@@ -724,14 +776,16 @@ def title_screen():
     load_button = ctk.CTkButton(master=fr1, text="options", command=settings_screen)
     load_button.pack(side="left", pady=10, padx=10)
 
-    new_button = ctk.CTkButton(master=fr1, text="quit game", command=app.destroy)
+    new_button = ctk.CTkButton(master=fr1, text="quit game", command=app1.destroy)
     new_button.pack(side="right", pady=10, padx=10)
 
-    app.mainloop()
+    app1.mainloop()
 
 
 load_user()
 print(user_info)
+print(app1.quit)
+
 
 if user_info == None:
     login_screen()

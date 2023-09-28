@@ -41,7 +41,9 @@ world_id int primary key auto_increment,
 world_name varchar(40),
 seed int,
 x_pos int,
-y_pos int);
+y_pos int,
+obj_x int,
+obj_y int);
 """
 
 # player stats
