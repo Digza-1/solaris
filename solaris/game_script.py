@@ -6,14 +6,11 @@ import solaris.ground_generation as gnd
 import random
 
 
-pyg.init()  # initiates pygame
-pyg.display.set_caption("solaris")
-
 WINDOW_SIZE = (1400, 750)
 
-screen = pyg.display.set_mode(WINDOW_SIZE)
-display = pyg.Surface((300, 200), 0, 32)# used as the low scaled surface for rendering 
-surface0 = pyg.Surface(WINDOW_SIZE, pyg.SRCALPHA)
+screen = None
+display = None
+surface0 = None
 
 moving_right = False
 moving_left = False
@@ -38,40 +35,12 @@ BG_COLOUR2 = (26, 135, 122)
 
 game_map = {}
 
-astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
-astroid_grey_img.set_colorkey((0, 0, 0))
+astroid_grey_img = astroid_grey2_img = None
+astroid_red_img = astroid_red2_img = astroid_blue_img = None
 
-astroid_grey2_img = pyg.image.load("solaris/assets/rock2.png").convert()
-astroid_grey2_img.set_colorkey((0, 0, 0))
-
-astroid_red_img = pyg.image.load("solaris/assets/rock3.png").convert()
-astroid_red_img.set_colorkey((0, 0, 0))
-
-astroid_red2_img = pyg.image.load("solaris/assets/rock5.png").convert()
-astroid_red2_img.set_colorkey((0, 0, 0))
-
-astroid_blue_img = pyg.image.load("solaris/assets/rock6.png").convert()
-astroid_blue_img.set_colorkey((0, 0, 0))
-
-
-player_img1 = pyg.image.load("solaris/assets/player.png").convert()
-player_img1.set_colorkey((0, 0, 0))
-
-player_img2 = pyg.image.load("solaris/assets/player.png").convert()
-player_img2.set_colorkey((0, 0, 0))
-
-player_img3 = pyg.image.load("solaris/assets/player.png").convert()
-player_img3.set_colorkey((0, 0, 0))
-
-tile_index = {
-    1: astroid_grey_img,
-    4: astroid_grey2_img,
-    2: astroid_red2_img,
-    3: astroid_red_img,
-    5: astroid_blue_img,
-}
-
-player_costume_index = {1: player_img1, 2: player_img2, 3: player_img3}
+player_img1 = player_img2 = player_img3 = None
+tile_index = None
+player_costume_index = None
 
 player_flipx = False
 player_flipy = False
@@ -82,23 +51,42 @@ player_rect = pyg.Rect(100, 100, 13, 13)
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
 
-sqlPass = "CH3-CH2-CH2-CH3"
+sqlPass = "123"
 
 world_id = 0
 player_id = 0
 
 
-def get_settings_sql():
+def get_settings_sql(pl_id, wld_id):
+    global player_id, world_id
+    player_id = pl_id
+    world_id = wld_id
     mydb = mysql.connector.connect(
-        ost="localhost", user="root", passwd=sqlPass, database="project_solaris"
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     cursor = mydb.cursor()
 
-    q = f"""select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,
-    costume) from project_solaris where world_id = {world_id} and player_id = {player_id} ;"""
-
-    cursor.execute(q)
-    res = cursor.fetchone()
+    q1 = f"""select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,costume)
+      from game_settings where world_id = {world_id} and player_id = {player_id} ;"""
+    q2 = f"""select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,costume)
+      from game_default_settings;"""
+    try:
+        cursor.execute(q1)
+        res = cursor.fetchone()
+        print(res)
+    except:
+        cursor.execute(q2)
+        res = cursor.fetchall()
+        print(res)
+    (
+        seed,
+        speed,
+        grey_thershold,
+        red_thershold,
+        blue_thershold,
+        difficulty,
+        costume,
+    ) = res[0]
 
 
 def draw_space(tile_rects):
@@ -206,13 +194,15 @@ def collision_test(rect, tiles):
 
     return hit_list
 
+
 def objective_reached():
     px_reached = round(round(player_rect.x) // objective_pos[0])
     py_reached = round(round(player_rect.x) // objective_pos[1])
 
     if px_reached and py_reached:
         print("objective reached")
-        add_text("objective reached", WINDOW_SIZE//2, 150,10)
+        add_text("objective reached", WINDOW_SIZE // 2, 150, 10)
+
 
 def move(rect, movement, tiles):
     collision_types = {"top": False, "bottom": False, "right": False, "left": False}
@@ -253,120 +243,183 @@ def anti_clip(rect, movement, tiles):
     return rect
 
 
-running = True
+def main(pl_id, wld_id):
+    global screen, scroll, display, tile_rects, player_movement, player_health, pause, tile_index
+    global moving_right, moving_left, moving_up, moving_down, player_flipy, player_flipx
+    global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
+    global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
 
-while running:  # game loop
-    display.fill(SKY_COLOUR)  # clear screen by filling it with black
+    pyg.init()  # initiates pygame
+    pyg.display.set_caption("solaris")
 
-    # to keep track of absolute x,y positions
-    scroll[0] += (player_rect.x - scroll[0] - 152) / 20
-    scroll[1] += (player_rect.y - scroll[1] - 106) / 20
+    screen = pyg.display.set_mode(WINDOW_SIZE)
+    display = pyg.Surface(
+        (300, 200), 0, 32
+    )  # used as the low scaled surface for rendering
+    surface0 = pyg.Surface(WINDOW_SIZE, pyg.SRCALPHA)
 
-    scroll = scroll.copy()
-    scroll[0] = int(scroll[0])
-    scroll[1] = int(scroll[1])
+    dev_m = False  # --------------------
 
-    draw_bg()
+    objective_pos = None
 
-    tile_rects = []
-    draw_space(tile_rects)
+    astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
+    astroid_grey_img.set_colorkey((0, 0, 0))
 
-    # ========================================= events =======================================
-    for event in pyg.event.get():  # event loop
-        if event.type == pyg.QUIT:
-            running = False
+    astroid_grey2_img = pyg.image.load("solaris/assets/rock2.png").convert()
+    astroid_grey2_img.set_colorkey((0, 0, 0))
 
-        if event.type == pyg.KEYDOWN:
-            if not pause:
-                if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
-                    moving_right = True
+    astroid_red_img = pyg.image.load("solaris/assets/rock3.png").convert()
+    astroid_red_img.set_colorkey((0, 0, 0))
 
-                if event.key == pyg.K_LEFT or event.key == pyg.K_a:
-                    moving_left = True
+    astroid_red2_img = pyg.image.load("solaris/assets/rock5.png").convert()
+    astroid_red2_img.set_colorkey((0, 0, 0))
 
-                if event.key == pyg.K_UP or event.key == pyg.K_w:
-                    moving_up = True
+    astroid_blue_img = pyg.image.load("solaris/assets/rock6.png").convert()
+    astroid_blue_img.set_colorkey((0, 0, 0))
 
-                if event.key == pyg.K_DOWN or event.key == pyg.K_s:
-                    moving_down = True
+    player_img1 = pyg.image.load("solaris/assets/player.png").convert()
+    player_img1.set_colorkey((0, 0, 0))
 
-        if event.type == pyg.KEYUP:
-            if event.key == pyg.K_ESCAPE:
-                if pause:
-                    pause = False
-                else:
-                    pause = True
-                    moving_right = False
-                    moving_left = False
-                    moving_up = False
-                    moving_down = False
+    player_img2 = pyg.image.load("solaris/assets/player.png").convert()
+    player_img2.set_colorkey((0, 0, 0))
 
-            if event.key == pyg.K_0:
-                player_rect.x += 10000
+    player_img3 = pyg.image.load("solaris/assets/player.png").convert()
+    player_img3.set_colorkey((0, 0, 0))
 
-            if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
-                moving_right = False
+    tile_index = {
+        1: astroid_grey_img,
+        4: astroid_grey2_img,
+        2: astroid_red2_img,
+        3: astroid_red_img,
+        5: astroid_blue_img,
+    }
 
-            if event.key == pyg.K_LEFT or event.key == pyg.K_a:
-                moving_left = False
+    player_costume_index = {1: player_img1, 2: player_img2, 3: player_img3}
 
-            if event.key == pyg.K_UP or event.key == pyg.K_w:
-                moving_up = False
+    player_flipx = False
+    player_flipy = False
 
-            if event.key == pyg.K_DOWN or event.key == pyg.K_s:
-                moving_down = False
+    player_rect = pyg.Rect(100, 100, 13, 13)
 
-    # ================================== movement =========================================
-    # movement stuff
-    player_movement = [0, 0]
-
-    if moving_right == True:
-        player_movement[0] += speed * time_deltatime
-
-    if moving_left == True:
-        player_movement[0] -= speed * time_deltatime
-
-    if moving_up == True:
-        player_movement[1] -= speed * time_deltatime
-
-    if moving_down == True:
-        player_movement[1] += speed * time_deltatime
-
-    # flip image in direction of movement
-    if player_movement[0] > 0:
-        player_flipx = False
-
-    if player_movement[0] < 0:
-        player_flipx = True
-
-    if player_movement[1] > 0:
-        player_flipy = True
-
-    if player_movement[1] < 0:
-        player_flipy = False
-
-    if dev_m == True:
-        add_text(f"{round(clock.get_fps())}", 350, 330, 10)
-        add_text(f"{player_movement}", 350, 383, 10)
-
-    add_text(f"Health: {player_health} %", 350, 370, 10)
-    add_text(f"x: {player_rect.x}   ,y: {player_rect.y}", 350, 350, 10)
-    add_text(f"objective: {objective_pos}",  120, 370, 10)
-    player_rect = anti_clip(player_rect, player_movement, tile_rects)
-
-    player_rect, collisions = move(player_rect, player_movement, tile_rects)
-
-    # draw player
-    display.blit(
-        pyg.transform.flip(player_img1, player_flipx, player_flipy),
-        (player_rect.x - scroll[0], player_rect.y - scroll[1]),
-    )
-
-    screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
-
-    if pause:
-        draw_pause()
-    pyg.display.update()
+    clock = pyg.time.Clock()
     time_deltatime = clock.tick(30)
 
-pyg.quit()
+    get_settings_sql(pl_id, wld_id)
+
+    running = True
+
+    while running:  # game loop
+        display.fill(SKY_COLOUR)  # clear screen by filling it with black
+
+        # to keep track of absolute x,y positions
+        scroll[0] += (player_rect.x - scroll[0] - 152) / 20
+        scroll[1] += (player_rect.y - scroll[1] - 106) / 20
+
+        scroll = scroll.copy()
+        scroll[0] = int(scroll[0])
+        scroll[1] = int(scroll[1])
+
+        draw_bg()
+
+        tile_rects = []
+        draw_space(tile_rects)
+
+        # ========================================= events =========================
+        for event in pyg.event.get():  # event loop
+            if event.type == pyg.QUIT:
+                running = False
+
+            if event.type == pyg.KEYDOWN:
+                if not pause:
+                    if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
+                        moving_right = True
+
+                    if event.key == pyg.K_LEFT or event.key == pyg.K_a:
+                        moving_left = True
+
+                    if event.key == pyg.K_UP or event.key == pyg.K_w:
+                        moving_up = True
+
+                    if event.key == pyg.K_DOWN or event.key == pyg.K_s:
+                        moving_down = True
+
+            if event.type == pyg.KEYUP:
+                if event.key == pyg.K_ESCAPE:
+                    if pause:
+                        pause = False
+                    else:
+                        pause = True
+                        moving_right = False
+                        moving_left = False
+                        moving_up = False
+                        moving_down = False
+
+                if event.key == pyg.K_0:
+                    player_rect.x += 10000
+
+                if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
+                    moving_right = False
+
+                if event.key == pyg.K_LEFT or event.key == pyg.K_a:
+                    moving_left = False
+
+                if event.key == pyg.K_UP or event.key == pyg.K_w:
+                    moving_up = False
+
+                if event.key == pyg.K_DOWN or event.key == pyg.K_s:
+                    moving_down = False
+
+        # ================================== movement =====================================
+        # movement stuff
+        player_movement = [0, 0]
+
+        if moving_right == True:
+            player_movement[0] += speed * time_deltatime
+
+        if moving_left == True:
+            player_movement[0] -= speed * time_deltatime
+
+        if moving_up == True:
+            player_movement[1] -= speed * time_deltatime
+
+        if moving_down == True:
+            player_movement[1] += speed * time_deltatime
+
+        # flip image in direction of movement
+        if player_movement[0] > 0:
+            player_flipx = False
+
+        if player_movement[0] < 0:
+            player_flipx = True
+
+        if player_movement[1] > 0:
+            player_flipy = True
+
+        if player_movement[1] < 0:
+            player_flipy = False
+
+        if dev_m == True:
+            add_text(f"{round(clock.get_fps())}", 350, 330, 10)
+            add_text(f"{player_movement}", 350, 383, 10)
+
+        add_text(f"Health: {player_health} %", 350, 370, 10)
+        add_text(f"x: {player_rect.x}   ,y: {player_rect.y}", 350, 350, 10)
+        add_text(f"objective: {objective_pos}", 120, 370, 10)
+        player_rect = anti_clip(player_rect, player_movement, tile_rects)
+
+        player_rect, collisions = move(player_rect, player_movement, tile_rects)
+
+        # draw player
+        display.blit(
+            pyg.transform.flip(player_img1, player_flipx, player_flipy),
+            (player_rect.x - scroll[0], player_rect.y - scroll[1]),
+        )
+
+        screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+        if pause:
+            draw_pause()
+        pyg.display.update()
+        time_deltatime = clock.tick(30)
+
+    pyg.quit()

@@ -16,24 +16,24 @@ username varchar(40) unique,
 passwd varchar(50) not null);"""
 
 # settings sql
-q5 = """create table game_settings ( player_id int primary key,
-seed int,
-speed int,
-grey_thershold decimal(5,3),
-red_thershold decimal(5,3),
-blue_thershold decimal(5,3),
-difficulty varchar(15),
-costume int)
-"""
+# game settings sql
+q5 = """create table game_settings (player_id int primary key,
+    seed decimal(5,3),
+    speed decimal(5,3),
+    grey_threshold decimal(5,3),
+    red_threshold decimal(5,3),
+    blue_threshold decimal(5,3),
+    difficulty varchar(15),
+    costume int);"""
 
 # default settings sql
-q6 = """create table game_default_settings (speed decimal(5,3),
-grey_thershold decimal(5,3),
-red_thershold decimal(5,3),
-blue_thershold decimal(5,3),
-difficulty varchar(15),
-costume int)
-"""
+q6 = """create table game_default_settings (
+    speed decimal(5,3),
+    grey_threshold decimal(5,3),
+    red_threshold decimal(5,3),
+    blue_threshold decimal(5,3),
+    difficulty varchar(15),
+    costume int);"""
 
 # game worlds
 q7 = """create table game_worlds ( player_id int,
@@ -50,33 +50,33 @@ obj_y int);
 q8 = """create table player_stats ( player_id int primary key,
 world_id int,
 distance_moved int,
-depth int,
+dist_from_obj int,
 collisions int)
 """
 
 inq1 = "insert into users(username,passwd) values('user','user');"
 inq2 = "insert into admins(username,passwd) values('admin','root');"
 
-inq3 = '''insert into game_default_settings(seed int,
-speed,
-grey_thershold,
-red_thershold,
-blue_thershold,
+# initialise game_default_settings
+inq3 = """insert into game_default_settings (
+    speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume
+) values (0.1, 0.25, 0.01, 0.1, 'normal', 0);"""
+
+inq4 = """insert into game_settings (
+    player_id, seed, speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume
+) values (0,0, 0.1, 0.25, 0.01, 0.1, 'normal', 1);"""
+
+inq5 = """insert into game_default_settings(speed,
+grey_threshold,
+red_threshold,
+blue_threshold,
 difficulty,
-costume) values(0.1, 0.25, 0.01, 0.1,'normal');'''
+costume) values(0.1, 0.25, 0.01, 0.1,'normal',1);"""
 
-inq4 = '''insert into game_settings(seed int,
-speed,
-grey_thershold,
-red_thershold,
-blue_thershold,
-difficulty,
-costume) values(0.1, 0.25, 0.01, 0.1,'normal');'''
+# q2, q3, q4, q5, q6, q7, q8
 
-
-#q2, q3, q4, q5, q6, q7, q8
-query_list = [inq1, inq2,inq3, inq4]
-sqlPass = "CH3-CH2-CH2-CH3"
+query_list = [q1, q2, q3, q4, q5, q6, q7, q8, inq1, inq2, inq3, inq4]
+sqlPass = "123"
 
 
 def database_init():
@@ -86,10 +86,17 @@ def database_init():
     )
     mycursor = mydb.cursor()
 
+    try:
+        mycursor.execute("drop database project_solaris")
+        mydb.commit()
+    except:
+        pass
+    ind = 0
     for query in query_list:
-        print(query)
+        print(ind)
         mycursor.execute(query)
         mydb.commit()
+        ind += 1
 
     mycursor.close()
     mydb.close()
