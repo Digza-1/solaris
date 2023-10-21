@@ -1,9 +1,15 @@
 # game script contains game code
 
 import pygame as pyg
+import pygame_gui
 import mysql.connector
-import solaris.ground_generation as gnd
 import random
+import pickle
+
+try:
+    import solaris.ground_generation as gnd
+except:
+    import ground_generation as gnd
 
 
 WINDOW_SIZE = (1400, 750)
@@ -66,27 +72,37 @@ def get_settings_sql(pl_id, wld_id):
     )
     cursor = mydb.cursor()
 
-    q1 = f"""select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,costume)
+    q1 = f"""select seed,speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where world_id = {world_id} and player_id = {player_id} ;"""
-    q2 = f"""select (seed,speed,grey_thershold,red_thershold,blue_thershold,difficulty,costume)
+
+    q2 = f"""select speed, grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings;"""
+
     try:
         cursor.execute(q1)
         res = cursor.fetchone()
         print(res)
+        (
+            seed,
+            speed,
+            grey_thershold,
+            red_thershold,
+            blue_thershold,
+            difficulty,
+            costume,
+        ) = res
     except:
         cursor.execute(q2)
         res = cursor.fetchall()
         print(res)
-    (
-        seed,
-        speed,
-        grey_thershold,
-        red_thershold,
-        blue_thershold,
-        difficulty,
-        costume,
-    ) = res[0]
+        (
+            speed,
+            grey_thershold,
+            red_thershold,
+            blue_thershold,
+            difficulty,
+            costume,
+        ) = res[0]
 
 
 def draw_space(tile_rects):
@@ -174,6 +190,8 @@ def draw_pause():
             WINDOW_SIZE[1] // 2,
         ],
     )
+
+    resume = pyg.draw.rect(surface0, (0, 0, 0, 180), [200, 150, 200, 50], 0, 2)
 
     screen.blit(surface0, (0, 0))
 
@@ -324,7 +342,7 @@ def main(pl_id, wld_id):
         tile_rects = []
         draw_space(tile_rects)
 
-        # ========================================= events =========================
+        # =========================== events =========================
         for event in pyg.event.get():  # event loop
             if event.type == pyg.QUIT:
                 running = False
@@ -423,3 +441,6 @@ def main(pl_id, wld_id):
         time_deltatime = clock.tick(30)
 
     pyg.quit()
+
+
+main(1, 1)

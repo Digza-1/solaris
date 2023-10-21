@@ -20,9 +20,7 @@ add_user_image = None  # ctk.CTkImage(
 autofill_user = False
 user_info = None
 uid = None
-sign_up_app = ctk.CTk()
-app_pl = None
-sett_app = None
+app_scr = ctk.CTk()
 
 worlds = []
 difficulty = None
@@ -31,7 +29,6 @@ refresh_worlds = True
 world_var = None
 sqlPass = "123"
 
-exit_screens = False
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("theme\solaris_theme_dark.json")
@@ -56,7 +53,7 @@ def load_user():
     try:
         user_info = pickle.load(open("rem_user.pkl", "rb"))
         print(user_info, "u info")
-    except FileNotFoundError:
+    except:
         autofill_user = False
 
     if user_info != None:
@@ -82,14 +79,10 @@ def check_user(username, passwd):
     return res
 
 
-def close_screen():
-    global sign_up_app
-    sign_up_app.destroy()
-
 
 def close_root_screen():
-    global exit_screens
-    exit_screens = True
+    global app_scr
+    app_scr.destroy()
 
 
 def login():
@@ -110,16 +103,15 @@ def login():
 
 # --------------------------login screen --------------------------
 def login_screen():
-    global user_entry, user_info, user_pass, checkbox
+    global user_entry, user_info, user_pass, checkbox,app_scr
     load_user()
 
-    root = ctk.CTkToplevel()
-    root.geometry("450x600")
-    root.title("login screen")
+    app_scr.geometry("450x600")
+    app_scr.title("login screen")
 
     bg_img = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
 
-    app = ctk.CTkCanvas(root, bg="black")
+    app = ctk.CTkCanvas(app_scr, bg="black")
     app.pack(fill="both", expand=True)
 
     imglabel = ctk.CTkLabel(app, text="", image=bg_img)
@@ -165,7 +157,7 @@ def login_screen():
         user_pass.insert(0, str(user_info["password"]))
         checkbox.select()
 
-    root.mainloop()
+    app_scr.mainloop()
 
 
 # ----------------------sign in------------------------------
@@ -270,22 +262,22 @@ def register():
 
 
 def sign_up_screen():
-    global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox
+    global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox,app_scr
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
-    sign_up_app = ctk.CTkToplevel()
-    sign_up_app.geometry("450x600")
-    sign_up_app.title("sign up")
+    app_scr = ctk.CTkToplevel()
+    app_scr.geometry("450x600")
+    app_scr.title("sign up")
 
     bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
-    label = ctk.CTkLabel(sign_up_app, image=bg_img3, text="")
+    label = ctk.CTkLabel(app_scr, image=bg_img3, text="")
     label.place(x=0, y=0)
 
-    label = ctk.CTkLabel(sign_up_app, font=("", 32), text="sign up")
+    label = ctk.CTkLabel(app_scr, font=("", 32), text="sign up")
     label.pack(pady=20)
 
-    frame0 = ctk.CTkFrame(master=sign_up_app, height=570, width=400)
+    frame0 = ctk.CTkFrame(master=app_scr, height=570, width=400)
     frame0.pack(fill="x", pady=10, padx=10, expand=False)
 
     frame = ctk.CTkFrame(master=frame0, height=570, width=400, fg_color="#020202")
@@ -320,11 +312,11 @@ def sign_up_screen():
         bg_color="transparent",
         fg_color="transparent",
         width=100,
-        command=sign_up_app.destroy,
+        command=app_scr.destroy,
     )
     button.pack(pady=20, padx=10)
 
-    sign_up_app.mainloop()
+    app_scr.mainloop()
 
 
 # -----------------------settings--------------------------
@@ -381,17 +373,17 @@ difficulty_value = None
 
 
 def admin_settings_screen():
-    global difficulty_value, sett_app
+    global difficulty_value, app_scr
 
-    sett_app = ctk.CTkToplevel()
-    sett_app.geometry("450x600")
-    sett_app.title("admin settings screen")
-    difficulty_value = ctk.Variable(sett_app)
+    app_scr = ctk.CTkToplevel()
+    app_scr.geometry("450x600")
+    app_scr.title("admin settings screen")
+    difficulty_value = ctk.Variable(app_scr)
     difficulty_value.set("normal")
-    label = ctk.CTkLabel(sett_app, text="settings")
+    label = ctk.CTkLabel(app_scr, text="settings")
     label.pack(pady=20, padx=20)
 
-    frame = ctk.CTkFrame(master=sett_app)
+    frame = ctk.CTkFrame(master=app_scr)
     frame.pack(pady=20, fill="both", expand=True)
 
     inFrame = ctk.CTkScrollableFrame(master=frame, width=500, height=350)
@@ -454,14 +446,14 @@ def admin_settings_screen():
         text="back",
         # bg_color="transparent",
         fg_color="transparent",
-        command=sett_app.destroy,
+        command=app_scr.destroy,
     )
 
     button.pack(side="left", pady=5)
 
 
 def admin_options():
-    global sett_app
+    global app_scr
     admin_name = ctk.CTkInputDialog(text="enter admin id:", title="admin id")
     print("id:", admin_name.get_input())
 
@@ -471,22 +463,22 @@ def admin_options():
     acc = check_admin(admin_name, admin_pass)
 
     if acc != None:
-        sett_app.destroy()
+        app_scr.destroy()
         admin_settings_screen()
 
 
 def settings_screen():
-    global difficulty_value, sett_app
+    global difficulty_value, app_scr
 
-    sett_app = ctk.CTkToplevel()
-    sett_app.geometry("450x600")
-    sett_app.title("settings screen")
-    difficulty_value = ctk.Variable(sett_app)
+    app_scr = ctk.CTkToplevel()
+    app_scr.geometry("450x600")
+    app_scr.title("settings screen")
+    difficulty_value = ctk.Variable(app_scr)
     difficulty_value.set("normal")
-    label = ctk.CTkLabel(sett_app, text="settings")
+    label = ctk.CTkLabel(app_scr, text="settings")
     label.pack(pady=20, padx=20)
 
-    frame = ctk.CTkFrame(master=sett_app)
+    frame = ctk.CTkFrame(master=app_scr)
     frame.pack(pady=20, fill="both", expand=True)
 
     inFrame = ctk.CTkScrollableFrame(master=frame, width=500, height=350)
@@ -558,7 +550,7 @@ def settings_screen():
         text="back",
         # bg_color="transparent",
         fg_color="transparent",
-        command=sett_app.destroy,
+        command=app_scr.destroy,
     )
 
     button.pack(side="left", pady=5)
@@ -585,6 +577,11 @@ def get_worlds_data():
 
     return res
 
+def seed_limit(num):
+    or_seed = str(num)
+    if len(num)>9:
+        return int(or_seed[:9])
+    return num
 
 def convert_num(str1):
     num = 0
@@ -594,8 +591,10 @@ def convert_num(str1):
     return num
 
 
+
+
 def create_world():
-    global uid, app_pl
+    global uid, app_scr
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
@@ -621,12 +620,12 @@ def create_world():
         mycursor.close()
         mydb.close()
 
-        app_pl.update()
-        app_pl.update_idletasks()
+        app_scr.update()
+        app_scr.update_idletasks()
 
 
 def delete_world():
-    global uid, app_pl
+    global uid, app_scr
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
@@ -652,8 +651,8 @@ def delete_world():
         mycursor.close()
         mydb.close()
 
-        app_pl.update()
-        app_pl.update_idletasks()
+        app_scr.update()
+        app_scr.update_idletasks()
 
 
 def play_world():
@@ -665,21 +664,21 @@ def play_world():
 
 
 def play_screen():
-    global worlds, refresh_worlds, world_var, app_pl
+    global worlds, refresh_worlds, world_var, app_scr
 
-    app_pl = ctk.CTkToplevel()
-    app_pl.geometry("600x600")
-    app_pl.title("play screen")
+    app_scr = ctk.CTkToplevel()
+    app_scr.geometry("600x600")
+    app_scr.title("play screen")
 
-    label = ctk.CTkLabel(app_pl, text="play")
+    label = ctk.CTkLabel(app_scr, text="play")
     label.pack(pady=20)
 
     bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
 
-    label = ctk.CTkLabel(app_pl, image=bg_img3, text="")
+    label = ctk.CTkLabel(app_scr, image=bg_img3, text="")
     label.place(x=0, y=0)
 
-    frame = ctk.CTkScrollableFrame(master=app_pl, width=440)
+    frame = ctk.CTkScrollableFrame(master=app_scr, width=440)
     frame.pack(pady=10, padx=10, fill="y", expand=True)
 
     if refresh_worlds == True:
@@ -700,7 +699,7 @@ def play_screen():
 
         #
 
-    buttons_frame = ctk.CTkFrame(master=app_pl, width=300)
+    buttons_frame = ctk.CTkFrame(master=app_scr, width=300)
     buttons_frame.pack()
 
     ub_frame = ctk.CTkFrame(master=buttons_frame, width=300, height=10)
@@ -735,7 +734,7 @@ def play_screen():
         text="back",
         bg_color="transparent",
         fg_color="transparent",
-        command=app_pl.destroy,
+        command=app_scr.destroy,
     )
     back_button.pack(pady=5, side="left")
 
@@ -789,18 +788,19 @@ stat_d = get_stats_data(uid)
 
 
 def stats_screen():
+    global app_scr
     stat_li = get_stats_data(uid)
     print(stat_li)
     stats_d = {}
 
-    app = ctk.CTkToplevel()
-    app.geometry("450x600")
-    app.title("stats screen")
+    app_scr = ctk.CTkToplevel()
+    app_scr.geometry("450x600")
+    app_scr.title("stats screen")
 
-    label = ctk.CTkLabel(app, text="statistics")
+    label = ctk.CTkLabel(app_scr, text="statistics")
     label.pack(pady=20)
 
-    frame = ctk.CTkScrollableFrame(master=app)
+    frame = ctk.CTkScrollableFrame(master=app_scr)
     frame.pack(pady=10, padx=10, fill="both", expand=True)
 
     for k, j in stats_d.items():
@@ -845,19 +845,22 @@ def stats_screen():
 
 
 def title_screen():
-    app1 = ctk.CTkToplevel()
-    app1.geometry("450x400")
-    app1.title("title screen")
+    global app_scr
+    
+    app_scr.destroy()
+    app_scr = ctk.CTk
+    app_scr.geometry("450x400")
+    app_scr.title("title screen")
 
     bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
 
-    bg_lablel = ctk.CTkLabel(app1, image=bg_img3, text="")
+    bg_lablel = ctk.CTkLabel(app_scr, image=bg_img3, text="")
     bg_lablel.place(x=0, y=0)
 
-    label = ctk.CTkLabel(app1, font=("", 32), text="Solaris")
+    label = ctk.CTkLabel(app_scr, font=("", 32), text="Solaris")
     label.pack(pady=20)
 
-    frame = ctk.CTkFrame(master=app1)
+    frame = ctk.CTkFrame(master=app_scr)
     frame.pack(pady=1, padx=1, fill="none", expand=True)
 
     fr3 = ctk.CTkFrame(master=frame)
@@ -872,15 +875,14 @@ def title_screen():
     load_button = ctk.CTkButton(master=fr1, text="options", command=settings_screen)
     load_button.pack(side="left", pady=10, padx=10)
 
-    new_button = ctk.CTkButton(master=fr1, text="quit game", command=app1.destroy)
+    new_button = ctk.CTkButton(master=fr1, text="quit game", command=app_scr.destroy)
     new_button.pack(side="right", pady=10, padx=10)
 
-    app1.mainloop()
+    app_scr.mainloop()
 
 
 load_user()
 print(user_info)
-print(sign_up_app.quit)
 
 
 if user_info == None:
