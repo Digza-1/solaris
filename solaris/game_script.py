@@ -65,6 +65,7 @@ player_id = 0
 
 def get_settings_sql(pl_id, wld_id):
     global player_id, world_id
+    global seed, speed, grey_thershold, red_thershold, blue_thershold, difficulty, costume
     player_id = pl_id
     world_id = wld_id
     mydb = mysql.connector.connect(
@@ -95,6 +96,7 @@ def get_settings_sql(pl_id, wld_id):
         cursor.execute(q2)
         res = cursor.fetchall()
         print(res)
+
         (
             speed,
             grey_thershold,
@@ -103,6 +105,7 @@ def get_settings_sql(pl_id, wld_id):
             difficulty,
             costume,
         ) = res[0]
+
 
 
 def draw_space(tile_rects):
