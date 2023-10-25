@@ -1,5 +1,6 @@
 import random
 import opensimplex
+import mysql.connector
 
 # Colors (RGB)
 BLACK = (0, 0, 0)
@@ -16,7 +17,45 @@ GREY_THRESHOLD = 0.25
 RED_THRESHOLD = 0.01
 BLUE_THRESHOLD = 0.1
 
+seed = 15373  # random.randint(-1000, 1000)
 far_limit = 10000000
+sqlPass = "123"
+
+
+def get_settings_sql_gnd(pl_id, wld_id):
+    global player_id, world_id
+    global seed, GREY_OFFSET, RED_OFFSET, BLUE_OFFSET
+    global BLUE_THRESHOLD, RED_THRESHOLD, GREY_THRESHOLD, difficulty
+    player_id = pl_id
+    world_id = wld_id
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    cursor = mydb.cursor()
+
+    q1 = f"""select seed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_settings where player_id = {player_id} ;"""
+
+    q2 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_default_settings;"""
+    try :
+        print("q1")
+        cursor.execute(q1)
+        res = cursor.fetchone()
+        print(res)
+    except:
+        print("q2")
+        cursor.execute(q2)
+        res = cursor.fetchone()
+        print(res)
+    (
+        seed,
+        BLUE_THRESHOLD,
+        RED_THRESHOLD,
+        GREY_THRESHOLD,
+        difficulty,
+        costume,
+    ) = res
 
 
 def update_variables(G_OFFSET1, R_OFFSET1, B_OFFSET1, G_THRESH1, R_THRESH1, B_THRESH1):
@@ -28,16 +67,9 @@ def update_variables(G_OFFSET1, R_OFFSET1, B_OFFSET1, G_THRESH1, R_THRESH1, B_TH
     print("new offests:", GREY_OFFSET, RED_OFFSET, BLUE_OFFSET)
 
 
-seed = 15373  # random.randint(-1000, 1000)
-
 noise_generator = opensimplex.OpenSimplex(seed=seed)
 
 # ============================ solaris astroid space generation ==============================
-
-
-def get_pos(x, y, scroll, CHUNK_SIZE):
-    target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * 16)))
-    target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * 16)))
 
 
 def generate_space(x, y, CHUNK_SIZE):
@@ -46,7 +78,7 @@ def generate_space(x, y, CHUNK_SIZE):
         for x_pos in range(CHUNK_SIZE):
             target_x = x * CHUNK_SIZE + x_pos
             target_y = y * CHUNK_SIZE + y_pos
-            tile_type = 0  # nothing
+            tile_type = 0  # empty space
 
             # openSimplex noise used for generating space
             noise_val = int(noise_generator.noise2(target_x * 0.1, target_y * 0.1) * 5)
@@ -67,11 +99,11 @@ def generate_space(x, y, CHUNK_SIZE):
 
             if (
                 BLUE_THRESHOLD
-                > BLUE_OFFSET - noise_val + total_offset + random.randint(1, 4)
+                > BLUE_OFFSET - noise_val + total_offset + random.randrange(1, 4)
             ):
                 tile_type = 5
 
-            if RED_THRESHOLD > RED_OFFSET - noise_val + random.randint(1, 4):
+            if RED_THRESHOLD > RED_OFFSET - noise_val + random.randrange(1, 4):
                 tile_type = 3
 
             if tile_type != EMPTY_BLOCK:

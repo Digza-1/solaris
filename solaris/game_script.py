@@ -51,8 +51,7 @@ player_costume_index = None
 player_flipx = False
 player_flipy = False
 
-player_rect = pyg.Rect(100, 100, 13, 13)
-
+player_rect = None
 
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
@@ -61,51 +60,62 @@ sqlPass = "123"
 
 world_id = 0
 player_id = 0
+seed = 0
 
 
 def get_settings_sql(pl_id, wld_id):
     global player_id, world_id
-    global seed, speed, grey_thershold, red_thershold, blue_thershold, difficulty, costume
-    player_id = pl_id
-    world_id = wld_id
+    global seed, speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
+
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     cursor = mydb.cursor()
 
     q1 = f"""select seed,speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
-      from game_settings where world_id = {world_id} and player_id = {player_id} ;"""
+      from game_settings where player_id = {pl_id} ;"""
 
-    q2 = f"""select speed, grey_threshold,red_threshold,blue_threshold,difficulty,costume
-      from game_default_settings;"""
+    q2 = f"""select seed,world_name,x_pos,y_pos,obj_x,obj_y
+      from game_worlds where player_id = {pl_id} ;"""
 
-    try:
-        cursor.execute(q1)
-        res = cursor.fetchone()
-        print(res)
-        (
-            seed,
-            speed,
-            grey_thershold,
-            red_thershold,
-            blue_thershold,
-            difficulty,
-            costume,
-        ) = res
-    except:
-        cursor.execute(q2)
-        res = cursor.fetchall()
-        print(res)
+    print("q1")
+    cursor.execute(q1)
+    res = cursor.fetchone()
+    print(res)
+    (
+        seed,
+        speed,
+        grey_thershold,
+        red_threshold,
+        blue_thershold,
+        difficulty,
+        costume,
+    ) = res
 
-        (
-            speed,
-            grey_thershold,
-            red_thershold,
-            blue_thershold,
-            difficulty,
-            costume,
-        ) = res[0]
+    cursor.execute(q2)
+    res = cursor.fetchone()
+    seed, w_name, xpos, ypos, objx, objy = res
+    player_rect.x,player_rect.y = xpos,ypos
 
+
+def save_state(pl_id, wld_id):
+    global seed, player_rect
+    xpos = player_rect.x
+    ypos = player_rect.y
+
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    cursor = mydb.cursor()
+
+    save_q = f"""update game_worlds set x_pos = {xpos}, y_pos = {ypos}, 
+    obj_x = {objective_pos[0]},obj_y = {objective_pos[1]}
+    where player_id = {pl_id} and world_id = {wld_id} """
+
+    stats_q = f"""update player_stats set   """
+
+    cursor.execute(save_q)
+    mydb.commit()
 
 
 def draw_space(tile_rects):
@@ -150,6 +160,7 @@ def draw_bg():
     pyg.draw.rect(display, BG_COLOUR, pyg.Rect(0, 120, 300, 80))
 
 
+# ===================== pause =======================
 def draw_pause():
     pyg.draw.rect(surface0, (128, 128, 128, 80), [0, 0, WINDOW_SIZE[0], WINDOW_SIZE[1]])
 
@@ -193,8 +204,19 @@ def draw_pause():
             WINDOW_SIZE[1] // 2,
         ],
     )
+    font = pyg.font.Font("freesansbold.ttf", 23)
 
-    resume = pyg.draw.rect(surface0, (0, 0, 0, 180), [200, 150, 200, 50], 0, 2)
+    resume = pyg.draw.rect(surface0, (68, 70, 84, 180), [420, 260, 170, 50], 0, 2)
+
+    save = pyg.draw.rect(surface0, (68, 70, 84, 180), [420, 330, 170, 50], 0, 2)
+
+    quit_game = pyg.draw.rect(surface0, (68, 70, 84, 180), [420, 400, 170, 50], 0, 2)
+
+    surface0.blit(font.render("game paused", True, (0, 255, 0)), (625, 195))
+
+    surface0.blit(font.render("resume", True, (0, 255, 0)), (425, 265))
+    surface0.blit(font.render("save game", True, (0, 255, 0)), (425, 335))
+    surface0.blit(font.render("save and quit", True, (0, 255, 0)), (425, 405))
 
     screen.blit(surface0, (0, 0))
 
@@ -216,6 +238,15 @@ def collision_test(rect, tiles):
     return hit_list
 
 
+def gen_objective():
+    objx = random.randint(10, 1000) * 897
+    objy = random.randint(10, 1000) * 894
+
+    obj_pos = objx, objy
+
+    return obj_pos
+
+
 def objective_reached():
     px_reached = round(round(player_rect.x) // objective_pos[0])
     py_reached = round(round(player_rect.x) // objective_pos[1])
@@ -226,6 +257,7 @@ def objective_reached():
 
 
 def move(rect, movement, tiles):
+    movement = (int(movement[0]), int(movement[1]))
     collision_types = {"top": False, "bottom": False, "right": False, "left": False}
     rect.x += movement[0]
     hit_list = collision_test(rect, tiles)
@@ -239,7 +271,6 @@ def move(rect, movement, tiles):
             elif movement[0] < 0:
                 rect.left = tile.right
                 collision_types["left"] = True
-
         rect.y += movement[1]
         hit_list = collision_test(rect, tiles)
 
@@ -264,8 +295,9 @@ def anti_clip(rect, movement, tiles):
     return rect
 
 
+# =============================== main ===========================
 def main(pl_id, wld_id):
-    global screen, scroll, display, tile_rects, player_movement, player_health, pause, tile_index
+    global screen, scroll, seed, display, tile_rects, player_movement, player_health, pause, tile_index
     global moving_right, moving_left, moving_up, moving_down, player_flipy, player_flipx
     global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
     global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
@@ -281,7 +313,8 @@ def main(pl_id, wld_id):
 
     dev_m = False  # --------------------
 
-    objective_pos = None
+    objective_pos = gen_objective()
+    game_map = {}
 
     astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
     astroid_grey_img.set_colorkey((0, 0, 0))
@@ -321,12 +354,13 @@ def main(pl_id, wld_id):
     player_flipy = False
 
     player_rect = pyg.Rect(100, 100, 13, 13)
-
+    player_rect.x,player_rect.y = 0,0
     clock = pyg.time.Clock()
     time_deltatime = clock.tick(30)
 
     get_settings_sql(pl_id, wld_id)
 
+    gnd.seed = seed
     running = True
 
     while running:  # game loop
@@ -349,6 +383,8 @@ def main(pl_id, wld_id):
         for event in pyg.event.get():  # event loop
             if event.type == pyg.QUIT:
                 running = False
+                save_state(pl_id, wld_id)
+                game_map = {}
 
             if event.type == pyg.KEYDOWN:
                 if not pause:
@@ -423,9 +459,9 @@ def main(pl_id, wld_id):
             add_text(f"{round(clock.get_fps())}", 350, 330, 10)
             add_text(f"{player_movement}", 350, 383, 10)
 
-        add_text(f"Health: {player_health} %", 350, 370, 10)
-        add_text(f"x: {player_rect.x}   ,y: {player_rect.y}", 350, 350, 10)
-        add_text(f"objective: {objective_pos}", 120, 370, 10)
+        add_text(f"Health: {player_health} %", 450, 370, 10)
+        add_text(f"x: {player_rect.x}   ,y: {player_rect.y}", 450, 350, 10)
+        add_text(f"objective: {objective_pos}", 150, 370, 10)
         player_rect = anti_clip(player_rect, player_movement, tile_rects)
 
         player_rect, collisions = move(player_rect, player_movement, tile_rects)
@@ -446,4 +482,4 @@ def main(pl_id, wld_id):
     pyg.quit()
 
 
-main(1, 1)
+# main(1, 1)

@@ -1,5 +1,5 @@
+# database initialisation 
 import mysql.connector
-
 
 # init database
 q1 = "create database project_solaris;"
@@ -18,13 +18,13 @@ passwd varchar(50) not null);"""
 # settings sql
 # game settings sql
 q5 = """create table game_settings (player_id int primary key,
-    seed decimal(5,3),
+    seed decimal(14,0),
     speed decimal(5,3),
     grey_threshold decimal(5,3),
     red_threshold decimal(5,3),
     blue_threshold decimal(5,3),
-    difficulty varchar(15),
-    costume int);"""
+    difficulty decimal(1,0),
+    costume decimal(1,0));"""
 
 # default settings sql
 q6 = """create table game_default_settings (
@@ -32,14 +32,14 @@ q6 = """create table game_default_settings (
     grey_threshold decimal(5,3),
     red_threshold decimal(5,3),
     blue_threshold decimal(5,3),
-    difficulty varchar(15),
-    costume int);"""
+    difficulty decimal(1,0),
+    costume decimal(1,0));"""
 
 # game worlds
 q7 = """create table game_worlds ( player_id int,
 world_id int primary key auto_increment,
 world_name varchar(40),
-seed int,
+seed decimal(14,0),
 x_pos int,
 y_pos int,
 obj_x int,
@@ -60,18 +60,19 @@ inq2 = "insert into admins(username,passwd) values('admin','root');"
 # initialise game_default_settings
 inq3 = """insert into game_default_settings (
     speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume
-) values (0.1, 0.25, 0.01, 0.1, 'normal', 0);"""
+) values (0.1, 0.25, 0.01, 0.1, 1, 0);"""
 
 inq4 = """insert into game_settings (
     player_id, seed, speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume
-) values (0,0, 0.1, 0.25, 0.01, 0.1, 'normal', 1);"""
+) values (0,0, 0.1, 0.25, 0.01, 0.1, 1, 1);"""
+
 
 inq5 = """insert into game_default_settings(speed,
 grey_threshold,
 red_threshold,
 blue_threshold,
 difficulty,
-costume) values(0.1, 0.25, 0.01, 0.1,'normal',1);"""
+costume) values(0.1, 0.25, 0.01, 0.1,1,1);"""
 
 # q2, q3, q4, q5, q6, q7, q8
 
