@@ -27,6 +27,8 @@ app_scr = ctk.CTk()
 
 worlds = []
 difficulty = 1
+costume = 1
+costume_dict = {"space craft 1": 1, "space craft 2": 2, "space craft 3": 3}
 diff_dict = {"easy": 1, "normal": 2, "hard": 3}
 refresh_worlds = True
 world_var = None
@@ -110,7 +112,6 @@ def login():
 def login_screen():
     global user_entry, user_info, user_pass, checkbox, app_scr
     load_user()
-
     app_scr.geometry("450x600")
     app_scr.title("login screen")
 
@@ -337,17 +338,31 @@ def save_admin_settings():
 
 
 def save_user_settings():
-    global difficulty
+    global difficulty, costume
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
-    q = "update settings set difficulty = '{}',costume = '{}';".format(difficulty,costume)
+    q = "update game_settings set difficulty = {},costume = {} where player_id = {};".format(
+        difficulty, costume, uid
+    )
     mycursor.execute(q)
     mydb.commit()
 
 
 def reset():
+    global difficulty,costume
+    difficulty = 1
+    costume = 1
+
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+
+    q = "update settings set difficulty = {}, costume = {} ;".format(difficulty,costume)
+
+def reset_admin():
     global difficulty
     difficulty = 1
 
@@ -355,10 +370,8 @@ def reset():
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
-    
+
     q = "update settings set difficulty = '{}';".format(difficulty)
-
-
 
 def check_admin(admin_name, passwd):
     mydb = mysql.connector.connect(
@@ -367,6 +380,7 @@ def check_admin(admin_name, passwd):
     mycursor = mydb.cursor()
 
     q = f"select admin_id,username from admins where username = '{admin_name}' and passwd = '{passwd}'; "
+    print(q)
     mycursor.execute(q)
     res = mycursor.fetchone()
     print(res)
@@ -378,10 +392,20 @@ def check_admin(admin_name, passwd):
 
 admin = False
 difficulty_text_val = None
+costume_val = None
 
-def diff_update():
-    global difficulty,difficulty_text_val
+
+def diff_update(x):
+    print(x)
+    global difficulty, difficulty_text_val
     difficulty = diff_dict.get(difficulty_text_val.get())
+
+
+def costume_update(x):
+    print(x)
+    global costume, costume_val
+    costume = costume_dict.get(costume_val.get())
+
 
 def admin_settings_screen():
     global difficulty_text_val, app_scr
@@ -409,15 +433,15 @@ def admin_settings_screen():
         dynamic_resizing=False,
         variable=difficulty_text_val,
         values=["easy", "normal", "hard"],
-        command=diff_update
+        command=diff_update,
     )
     difficulty_box.pack(pady=10)
-    
 
     costume = ctk.CTkOptionMenu(
         inFrame,
         font=("", 16),
         dynamic_resizing=False,
+        variable=costume_val,
         values=["space craft 1", "space craft 2", "space craft 3"],
     )
     costume.pack(pady=10)
@@ -437,8 +461,7 @@ def admin_settings_screen():
     g_off = ctk.CTkEntry(master=frame, placeholder_text="red offset", width=220)
     g_off.pack(pady=12, padx=15)
 
-
-    # put things here
+    # sql
     #
     #
 
@@ -453,7 +476,7 @@ def admin_settings_screen():
         text="reset",
         bg_color="transparent",
         fg_color="transparent",
-        command=reset,
+        command=reset_admin,
     )
     button.pack(pady=5, side="left")
 
@@ -479,13 +502,11 @@ def admin_settings_screen():
 
 def admin_options():
     global app_scr
-    admin_name = ctk.CTkInputDialog(text="enter admin id:", title="admin id")
-    print("admin username:", admin_name.get_input())
+    admin_name = ctk.CTkInputDialog(text="enter admin name:", title="admin id")
 
     admin_pass = ctk.CTkInputDialog(text="enter admin passwd:", title="admin passwd")
-    print("passwd:", admin_pass.get_input())
 
-    acc = check_admin(admin_name, admin_pass)
+    acc = check_admin(admin_name.get_input(), admin_pass.get_input())
 
     if acc != None:
         app_scr.destroy()
@@ -498,13 +519,18 @@ def admin_options():
 
 
 def settings_screen():
-    global difficulty_text_val, app_scr
+    global difficulty_text_val, costume_val, app_scr
 
     app_scr = ctk.CTkToplevel()
     app_scr.geometry("450x600")
     app_scr.title("settings screen")
+
     difficulty_text_val = ctk.Variable(app_scr)
     difficulty_text_val.set("normal")
+
+    costume_val = ctk.Variable(app_scr)
+    costume_val.set("space craft 1")
+
     label = ctk.CTkLabel(app_scr, text="settings")
     label.pack(pady=20, padx=20)
 
@@ -525,18 +551,21 @@ def settings_screen():
         font=("", 16),
         dynamic_resizing=False,
         variable=difficulty_text_val,
+        command=diff_update,
         values=["easy", "normal", "hard"],
     )
     difficulty.pack(pady=10)
     difficulty = diff_dict.get(difficulty_text_val.get())
 
-    costume = ctk.CTkOptionMenu(
+    costumes = ctk.CTkOptionMenu(
         inFrame,
         font=("", 16),
         dynamic_resizing=False,
+        variable=costume_val,
+        command=costume_update,
         values=["space craft 1", "space craft 2", "space craft 3"],
     )
-    costume.pack(pady=10)
+    costumes.pack(pady=10)
 
     empty = ctk.CTkLabel(inFrame, text="")
     empty.pack()
@@ -585,8 +614,6 @@ def settings_screen():
 
     button.pack(side="left", pady=5)
 
-    # app.mainloop()
-
 
 def get_worlds_data():
     global uid
@@ -619,7 +646,7 @@ def convert_num(str1):
     num = 0
     for i in str1:
         num += ord(i) * 10
-    print('conv',num)
+    print("conv", num)
     num = seed_limit(num)
     return num
 
@@ -642,10 +669,10 @@ def create_world():
             seed = randint(-500000, 500000)
         seed = convert_num(seed)
 
-        print("w name,seed:", world_name, seed)
+        print("w name:", world_name, "seed:", seed)
 
         q1 = f"insert into game_worlds (world_name,seed,player_id) values('{world_name}',{seed},{uid});"
- 
+
         mycursor.execute(q1)
         mydb.commit()
 
@@ -659,8 +686,8 @@ def create_world():
 
 
 def delete_world():
-    global uid, app_scr , worlds
-    
+    global uid, app_scr, worlds
+
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -668,9 +695,8 @@ def delete_world():
 
     name_inp = ctk.CTkInputDialog(text="enter world name: ", title="world name")
     world_name = str(name_inp.get_input())
-    print(world_id,uid,world_name)
+    print(world_id, uid, world_name)
     if world_name != None:
-
         query = f"delete from game_worlds where world_name = '{world_name}' and player_id = {uid};"
         mycursor.execute(query)
         mydb.commit()
@@ -685,9 +711,8 @@ def delete_world():
 
 
 def play_world():
-    global world_id,uid
+    global world_id, uid
     world_id = int(world_var.get())
-    print(world_id)
 
     solaris.game_script.main(uid, world_id)
 
@@ -878,6 +903,7 @@ def stats_screen():
 
 def title_screen():
     global app_scr
+
     app_scr.destroy()
     app_scr = ctk.CTk()
     app_scr.geometry("450x400")

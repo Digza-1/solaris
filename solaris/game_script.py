@@ -53,6 +53,8 @@ player_flipy = False
 
 player_rect = None
 
+player_stats = {"dist_moved": 0, "dist_obj": 0, "collisions": 0}
+initial_dist_moved = 0
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
 
@@ -71,19 +73,50 @@ def get_settings_sql(pl_id, wld_id):
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     cursor = mydb.cursor()
-
-    q1 = f"""select seed,speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+    # get settings
+    q1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {pl_id} ;"""
 
     q2 = f"""select seed,world_name,x_pos,y_pos,obj_x,obj_y
-      from game_worlds where player_id = {pl_id} ;"""
+      from game_worlds where player_id = {pl_id} and world_id = {wld_id} ;"""
 
     print("q1")
-    cursor.execute(q1)
-    res = cursor.fetchone()
+
+    try:
+        cursor.execute(q1)
+        res = cursor.fetchone()
+    except:
+        # if setting not found create
+        print("creating settings ")
+        q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_default_settings; """
+
+        cursor.execute(q1_1)
+        res1 = cursor.fetchone()
+        (
+            speed,
+            grey_thershold,
+            red_threshold,
+            blue_thershold,
+            difficulty,
+            costume,
+        ) = res1
+
+        q1_2 = f"""insert into (speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume)
+     values ({speed},
+        {grey_thershold},
+        {red_threshold},
+        {blue_thershold},
+        {difficulty},
+        {costume}) game_settings where player_id = {pl_id} ;"""
+        cursor.execute(q1_2)
+        mydb.commit()
+
+        cursor.execute(q1)
+        res = cursor.fetchone()
+
     print(res)
     (
-        seed,
         speed,
         grey_thershold,
         red_threshold,
@@ -94,12 +127,32 @@ def get_settings_sql(pl_id, wld_id):
 
     cursor.execute(q2)
     res = cursor.fetchone()
+    print("ln 105:", res)
     seed, w_name, xpos, ypos, objx, objy = res
-    player_rect.x,player_rect.y = xpos,ypos
+    print("x,y pos = = = =", xpos, ypos)
+    if xpos or ypos:
+        player_rect.x, player_rect.y = xpos, ypos
+    print("objx", objx)
+    if not objx:
+        objective_pos = gen_objective()
+
+    # get player stats
+    q3 = f"""select distance_moved,dist_from_obj,
+    collisions,player_id,world_id from player_stats where player_id = {pl_id} """
+    try:
+        cursor.execute(q3)
+        res = cursor.fetchone()
+    except:
+        stats_q_1 = f"""insert into player_stats (distance_moved,dist_from_obj,
+    collisions,player_id,world_id) values (0,0,0,{pl_id},{wld_id}) """
+        cursor.execute(stats_q_1)
+        mydb.commit()
+        cursor.execute(q3)
+        res = cursor.fetchone()
 
 
 def save_state(pl_id, wld_id):
-    global seed, player_rect
+    global seed, player_rect, objective_pos
     xpos = player_rect.x
     ypos = player_rect.y
 
@@ -111,8 +164,11 @@ def save_state(pl_id, wld_id):
     save_q = f"""update game_worlds set x_pos = {xpos}, y_pos = {ypos}, 
     obj_x = {objective_pos[0]},obj_y = {objective_pos[1]}
     where player_id = {pl_id} and world_id = {wld_id} """
-
-    stats_q = f"""update player_stats set   """
+    obj_dist = ()
+    stats_q = f"""update player_stats set 
+    distance_moved= {initial_dist_moved + player_stats['dist_moved']} ,dist_from_obj = {obj_dist},
+    collisions = {player_stats['collisions']} 
+    where player_id = {pl_id} and world_id = {wld_id}  """
 
     cursor.execute(save_q)
     mydb.commit()
@@ -219,6 +275,7 @@ def draw_pause():
     surface0.blit(font.render("save and quit", True, (0, 255, 0)), (425, 405))
 
     screen.blit(surface0, (0, 0))
+    return resume, save, quit_game
 
 
 def add_text(text1, x, y, size):
@@ -313,7 +370,6 @@ def main(pl_id, wld_id):
 
     dev_m = False  # --------------------
 
-    objective_pos = gen_objective()
     game_map = {}
 
     astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
@@ -354,7 +410,7 @@ def main(pl_id, wld_id):
     player_flipy = False
 
     player_rect = pyg.Rect(100, 100, 13, 13)
-    player_rect.x,player_rect.y = 0,0
+    player_rect.x, player_rect.y = 0, 0
     clock = pyg.time.Clock()
     time_deltatime = clock.tick(30)
 
@@ -378,6 +434,9 @@ def main(pl_id, wld_id):
 
         tile_rects = []
         draw_space(tile_rects)
+
+        if pause:
+            resume_b, pause_b, quit_b = draw_pause()
 
         # =========================== events =========================
         for event in pyg.event.get():  # event loop
@@ -474,8 +533,6 @@ def main(pl_id, wld_id):
 
         screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
 
-        if pause:
-            draw_pause()
         pyg.display.update()
         time_deltatime = clock.tick(30)
 
