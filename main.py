@@ -378,8 +378,8 @@ def reset_admin():
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
-
-    q = "update settings set difficulty = '{}';".format(difficulty)
+    q2 = "select difficulty , costume from default_settings; "
+    q = "update settings set difficulty = {} where player_id = {};".format(difficulty,uid)
 
 
 def check_admin(admin_name, passwd):
