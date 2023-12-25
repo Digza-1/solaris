@@ -327,12 +327,17 @@ def sign_up_screen():
 
 # -----------------------settings--------------------------
 def save_admin_settings():
-    global difficulty
+    global difficulty, admin_settings_dict
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
-    q = "update settings set difficulty = '{}';".format(difficulty)
+
+    q = f"""update settings set difficulty = {difficulty}, speed = {admin_settings_dict['speed']},
+      grey_threshold = {admin_settings_dict['grey_threshold']},
+      red_threshold ={admin_settings_dict['red_threshold']}, 
+      blue_threshold = {admin_settings_dict['blue_threshold']} ,  where player_id = {uid};"""
+
     mycursor.execute(q)
     mydb.commit()
 
@@ -351,7 +356,7 @@ def save_user_settings():
 
 
 def reset():
-    global difficulty,costume
+    global difficulty, costume
     difficulty = 1
     costume = 1
 
@@ -360,7 +365,10 @@ def reset():
     )
     mycursor = mydb.cursor()
 
-    q = "update settings set difficulty = {}, costume = {} ;".format(difficulty,costume)
+    q = "update settings set difficulty = {}, costume = {} ;".format(
+        difficulty, costume
+    )
+
 
 def reset_admin():
     global difficulty
@@ -372,6 +380,7 @@ def reset_admin():
     mycursor = mydb.cursor()
 
     q = "update settings set difficulty = '{}';".format(difficulty)
+
 
 def check_admin(admin_name, passwd):
     mydb = mysql.connector.connect(
@@ -405,6 +414,9 @@ def costume_update(x):
     print(x)
     global costume, costume_val
     costume = costume_dict.get(costume_val.get())
+
+
+admin_settings_dict = {}
 
 
 def admin_settings_screen():
@@ -442,6 +454,7 @@ def admin_settings_screen():
         font=("", 16),
         dynamic_resizing=False,
         variable=costume_val,
+        command=costume_update,
         values=["space craft 1", "space craft 2", "space craft 3"],
     )
     costume.pack(pady=10)
@@ -479,6 +492,12 @@ def admin_settings_screen():
         command=reset_admin,
     )
     button.pack(pady=5, side="left")
+
+    admin_settings_dict["speed"] = sp.get()
+    admin_settings_dict["red_threshold"] = r_off.get()
+    admin_settings_dict["grey_threshold"] = g_off.get()
+    admin_settings_dict["blue_threshold"] = sp.get()
+    admin_settings_dict[""] = sp.get()
 
     button = ctk.CTkButton(
         master=f3,
@@ -616,7 +635,6 @@ def settings_screen():
 
 
 def get_worlds_data():
-    global uid
     print(uid)
 
     mydb = mysql.connector.connect(
@@ -818,6 +836,17 @@ def play_screen():
 
 
 # ---------------------stats screen -------------------------------
+stats_n = "distance_moved,"
+
+
+def stats_to_dict(stats):
+    # list to dict
+    d = {}
+    for i in stats_n:
+        if len(i) > 1:
+            k = (d[0],)
+
+
 def get_stats_data(uid):
     if uid != None:
         mydb = mysql.connector.connect(
@@ -825,9 +854,7 @@ def get_stats_data(uid):
         )
         mycursor = mydb.cursor()
 
-        stats_n = "distance_moved,"
-
-        query = f"select * from player_stats where player_id = {uid};"
+        query = f"select {stats_n} from player_stats where player_id = {uid};"
 
         mycursor.execute(query)
         res = mycursor.fetchall()
@@ -841,6 +868,7 @@ def get_stats_data(uid):
     return res
 
 
+stats_d = {}
 stat_d = get_stats_data(uid)
 
 
@@ -848,7 +876,6 @@ def stats_screen():
     global app_scr
     stat_li = get_stats_data(uid)
     print(stat_li)
-    stats_d = {}
 
     app_scr = ctk.CTkToplevel()
     app_scr.geometry("450x600")
@@ -879,13 +906,6 @@ def stats_screen():
         command=None,
     )
     button.pack(pady=20, side="left")
-
-    button = ctk.CTkButton(
-        master=frame,
-        text="save",
-        bg_color="transparent",
-        fg_color="transparent",
-    )
 
     button.pack(side="right", padx=20)
 
