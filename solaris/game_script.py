@@ -53,8 +53,10 @@ player_flipy = False
 
 player_rect = None
 
-player_stats = {"dist_moved": 0, "dist_obj": 0, "collisions": 0}
+player_stats = {"dist_moved": 0, "collisions": 0}
 initial_dist_moved = 0
+collision_state = [0, 0]
+
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
 
@@ -66,7 +68,7 @@ seed = 0
 
 
 def get_settings_sql(pl_id, wld_id):
-    global player_id, world_id
+    global player_id, world_id, objective_pos
     global seed, speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
 
     mydb = mysql.connector.connect(
@@ -133,8 +135,13 @@ def get_settings_sql(pl_id, wld_id):
     if xpos or ypos:
         player_rect.x, player_rect.y = xpos, ypos
     print("objx", objx)
+
     if not objx:
         objective_pos = gen_objective()
+    else:
+        objective_pos = [objx, objy]
+
+    print("objective_pos", objective_pos)
 
     # get player stats
     q3 = f"""select distance_moved,dist_from_obj,
@@ -156,6 +163,14 @@ def save_state(pl_id, wld_id):
     xpos = player_rect.x
     ypos = player_rect.y
 
+    # distance formula between player and object
+    try:
+        obj_dist = int(
+            ((xpos - objective_pos[0]) ** 2 + (ypos - objective_pos[1]) ** 2) ** 0.5
+        )
+    except:
+        pass
+
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -164,7 +179,7 @@ def save_state(pl_id, wld_id):
     save_q = f"""update game_worlds set x_pos = {xpos}, y_pos = {ypos}, 
     obj_x = {objective_pos[0]},obj_y = {objective_pos[1]}
     where player_id = {pl_id} and world_id = {wld_id} """
-    obj_dist = ()
+
     stats_q = f"""update player_stats set 
     distance_moved= {initial_dist_moved + player_stats['dist_moved']} ,dist_from_obj = {obj_dist},
     collisions = {player_stats['collisions']} 
@@ -317,6 +332,7 @@ def move(rect, movement, tiles):
     movement = (int(movement[0]), int(movement[1]))
     collision_types = {"top": False, "bottom": False, "right": False, "left": False}
     rect.x += movement[0]
+
     hit_list = collision_test(rect, tiles)
 
     if cliping == True:
@@ -328,7 +344,8 @@ def move(rect, movement, tiles):
             elif movement[0] < 0:
                 rect.left = tile.right
                 collision_types["left"] = True
-        rect.y += movement[1]
+    rect.y += movement[1]
+    if cliping == True:
         hit_list = collision_test(rect, tiles)
 
         for tile in hit_list:
@@ -345,9 +362,10 @@ def move(rect, movement, tiles):
 
 def anti_clip(rect, movement, tiles):
     # prevents player from going into the blocks
-    for tile in tiles:
-        if rect.colliderect(tile):
-            movement[0] += TILE_SIZE + 5
+    if cliping == True:
+        for tile in tiles:
+            if rect.colliderect(tile):
+                movement[0] += TILE_SIZE + 5
 
     return rect
 
@@ -358,6 +376,8 @@ def main(pl_id, wld_id):
     global moving_right, moving_left, moving_up, moving_down, player_flipy, player_flipx
     global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
     global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
+
+    gnd.get_settings_sql_gnd(pl_id, wld_id)
 
     pyg.init()  # initiates pygame
     pyg.display.set_caption("solaris")
@@ -539,4 +559,5 @@ def main(pl_id, wld_id):
     pyg.quit()
 
 
-# main(1, 1)
+if __name__ == "__main__":
+    main(1, 5)

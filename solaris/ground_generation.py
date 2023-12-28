@@ -20,6 +20,7 @@ BLUE_THRESHOLD = 0.1
 seed = 15373  # random.randint(-1000, 1000)
 far_limit = 10000000
 sqlPass = "123"
+player_id, world_id = None
 
 
 def get_settings_sql_gnd(pl_id, wld_id):
@@ -33,29 +34,43 @@ def get_settings_sql_gnd(pl_id, wld_id):
     )
     cursor = mydb.cursor()
 
-    q1 = f"""select seed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+    q1 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {player_id} ;"""
 
     q2 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings;"""
+
+    q3 = f"""select seed from game_worlds where player_id = {player_id} and world_id = {world_id}"""
+
     try:
         print("q1")
         cursor.execute(q1)
         res = cursor.fetchone()
         print(res)
+        (
+            BLUE_THRESHOLD,
+            RED_THRESHOLD,
+            GREY_THRESHOLD,
+            difficulty,
+            costume,
+        ) = res
     except:
         print("q2")
         cursor.execute(q2)
         res = cursor.fetchone()
         print(res)
-    (
-        seed,
-        BLUE_THRESHOLD,
-        RED_THRESHOLD,
-        GREY_THRESHOLD,
-        difficulty,
-        costume,
-    ) = res
+        (
+            BLUE_THRESHOLD,
+            RED_THRESHOLD,
+            GREY_THRESHOLD,
+            difficulty,
+            costume,
+        ) = res
+        in_q3 = f"""insert into game_settings grey_threshold,red_threshold,blue_threshold,difficulty,costume
+    values ({BLUE_THRESHOLD},{RED_THRESHOLD},{GREY_THRESHOLD},{difficulty},{costume})
+    where player_id = {player_id}; """
+        cursor.execute(q2)
+        mydb.commit()
 
 
 def update_variables(G_OFFSET1, R_OFFSET1, B_OFFSET1, G_THRESH1, R_THRESH1, B_THRESH1):

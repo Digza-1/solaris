@@ -379,7 +379,9 @@ def reset_admin():
     )
     mycursor = mydb.cursor()
     q2 = "select difficulty , costume from default_settings; "
-    q = "update settings set difficulty = {} where player_id = {};".format(difficulty,uid)
+    q = "update settings set difficulty = {} where player_id = {};".format(
+        difficulty, uid
+    )
 
 
 def check_admin(admin_name, passwd):
@@ -836,15 +838,16 @@ def play_screen():
 
 
 # ---------------------stats screen -------------------------------
-stats_n = "distance_moved,"
+stats_n = "distance_moved,dist_from_obj,collisions"
 
 
 def stats_to_dict(stats):
     # list to dict
     d = {}
-    for i in stats_n:
-        if len(i) > 1:
-            k = (d[0],)
+    ind = 0
+    for i in stats_n.split(","):
+        d[i] = stats[ind]
+        ind += 1
 
 
 def get_stats_data(uid):
