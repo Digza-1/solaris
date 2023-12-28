@@ -38,7 +38,7 @@ def get_settings_sql_gnd(pl_id, wld_id):
 
     q2 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings;"""
-    try :
+    try:
         print("q1")
         cursor.execute(q1)
         res = cursor.fetchone()
@@ -82,6 +82,7 @@ def generate_space(x, y, CHUNK_SIZE):
 
             # openSimplex noise used for generating space
             noise_val = int(noise_generator.noise2(target_x * 0.1, target_y * 0.1) * 5)
+
             total_offset = abs(x_pos / far_limit)
             rnd = random.randint(0, 10)
 
