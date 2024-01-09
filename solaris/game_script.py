@@ -7,9 +7,9 @@ import random
 import pickle
 
 try:
-    import solaris.ground_generation as gnd
-except:
     import ground_generation as gnd
+except:
+    import solaris.ground_generation as gnd
 
 
 WINDOW_SIZE = (1400, 750)
@@ -67,6 +67,65 @@ player_id = 0
 seed = 0
 
 
+def insert_sql_settings(mydb, cursor, pl_id):
+    print("creating settings ")
+    q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_default_settings; """
+
+    cursor.execute(q1_1)
+    res1 = cursor.fetchone()
+    (
+        speed,
+        grey_thershold,
+        red_threshold,
+        blue_thershold,
+        difficulty,
+        costume,
+    ) = res1
+
+    q1_2 = f"""insert into game_settings(player_id,speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume)
+    values ({pl_id},{speed},
+    {grey_thershold},{red_threshold},
+    {blue_thershold},{difficulty},
+    {costume});"""
+    cursor.execute(q1_2)
+    mydb.commit()
+
+
+def get_settings_sql_player(pl_id):
+    global player_id
+    global speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
+
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    cursor = mydb.cursor()
+    # get settings
+    q1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_settings where player_id = {pl_id} ;"""
+
+    try:
+        cursor.execute(q1)
+        res = cursor.fetchone()
+    except:
+        # if setting not found create
+        insert_sql_settings(mydb, cursor, pl_id)
+        cursor.execute(q1)
+        res = cursor.fetchone()
+
+    print(res)
+    (
+        speed,
+        grey_thershold,
+        red_threshold,
+        blue_thershold,
+        difficulty,
+        costume,
+    ) = res
+
+    return (speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume)
+
+
 def get_settings_sql(pl_id, wld_id):
     global player_id, world_id, objective_pos
     global seed, speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
@@ -87,33 +146,14 @@ def get_settings_sql(pl_id, wld_id):
     try:
         cursor.execute(q1)
         res = cursor.fetchone()
+
+        if res == None:
+            insert_sql_settings(mydb, cursor, pl_id)
+            cursor.execute(q1)
+            res = cursor.fetchone()
     except:
         # if setting not found create
-        print("creating settings ")
-        q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
-      from game_default_settings; """
-
-        cursor.execute(q1_1)
-        res1 = cursor.fetchone()
-        (
-            speed,
-            grey_thershold,
-            red_threshold,
-            blue_thershold,
-            difficulty,
-            costume,
-        ) = res1
-
-        q1_2 = f"""insert into (speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume)
-     values ({speed},
-        {grey_thershold},
-        {red_threshold},
-        {blue_thershold},
-        {difficulty},
-        {costume}) game_settings where player_id = {pl_id} ;"""
-        cursor.execute(q1_2)
-        mydb.commit()
-
+        insert_sql_settings(mydb, cursor, pl_id)
         cursor.execute(q1)
         res = cursor.fetchone()
 
@@ -131,10 +171,32 @@ def get_settings_sql(pl_id, wld_id):
     res = cursor.fetchone()
     print("ln 105:", res)
     seed, w_name, xpos, ypos, objx, objy = res
+    seed = int(seed)
+    w_name = str(w_name)
+
+    grey_thershold = float(grey_thershold)
+    red_threshold = float(red_threshold)
+    blue_thershold = float(blue_thershold)
+    try:
+        xpos = int(xpos)
+        ypos = int(ypos)
+        objx = int(objx)
+        objy = int(objy)
+    except:
+        pass
+
     print("x,y pos = = = =", xpos, ypos)
     if xpos or ypos:
-        player_rect.x, player_rect.y = xpos, ypos
-    print("objx", objx)
+        player_rect.x, player_rect.y = int(xpos), int(ypos)
+
+    gnd.seed = int(seed)
+    gnd.gnd_gen_init(int(seed))
+    gnd.BLUE_THRESHOLD, gnd.RED_THRESHOLD, gnd.GREY_THRESHOLD = (
+        blue_thershold,
+        red_threshold,
+        grey_thershold,
+    )
+    gnd.difficulty = difficulty
 
     if not objx:
         objective_pos = gen_objective()
@@ -230,9 +292,14 @@ def draw_space(tile_rects):
 def draw_bg():
     pyg.draw.rect(display, BG_COLOUR, pyg.Rect(0, 120, 300, 80))
 
+    # ===================== pause =======================
 
-# ===================== pause =======================
+
+resume = save = quit_game = None
+
+
 def draw_pause():
+    global resume, save, quit_game
     pyg.draw.rect(surface0, (128, 128, 128, 80), [0, 0, WINDOW_SIZE[0], WINDOW_SIZE[1]])
 
     pyg.draw.rect(
@@ -344,6 +411,7 @@ def move(rect, movement, tiles):
             elif movement[0] < 0:
                 rect.left = tile.right
                 collision_types["left"] = True
+        player_stats["collisions"] += len(hit_list)
     rect.y += movement[1]
     if cliping == True:
         hit_list = collision_test(rect, tiles)
@@ -455,9 +523,6 @@ def main(pl_id, wld_id):
         tile_rects = []
         draw_space(tile_rects)
 
-        if pause:
-            resume_b, pause_b, quit_b = draw_pause()
-
         # =========================== events =========================
         for event in pyg.event.get():  # event loop
             if event.type == pyg.QUIT:
@@ -552,6 +617,8 @@ def main(pl_id, wld_id):
         )
 
         screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
+        if pause:
+            resume_b, pause_b, quit_b = draw_pause()
 
         pyg.display.update()
         time_deltatime = clock.tick(30)
@@ -560,4 +627,4 @@ def main(pl_id, wld_id):
 
 
 if __name__ == "__main__":
-    main(1, 5)
+    main(1, 1)

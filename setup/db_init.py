@@ -1,6 +1,7 @@
-# database initialisation 
+# database initialisation
 import mysql.connector
 
+print("init database")
 # init database
 q1 = "create database project_solaris;"
 q2 = "use project_solaris;"

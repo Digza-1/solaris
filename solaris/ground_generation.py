@@ -2,6 +2,7 @@ import random
 import opensimplex
 import mysql.connector
 
+
 # Colors (RGB)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -20,7 +21,31 @@ BLUE_THRESHOLD = 0.1
 seed = 15373  # random.randint(-1000, 1000)
 far_limit = 10000000
 sqlPass = "123"
-player_id, world_id = None
+
+
+def insert_sql_settings(mydb, cursor, pl_id):
+    print("creating settings ")
+    q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_default_settings; """
+
+    cursor.execute(q1_1)
+    res1 = cursor.fetchone()
+    (
+        speed,
+        grey_thershold,
+        red_threshold,
+        blue_thershold,
+        difficulty,
+        costume,
+    ) = res1
+
+    q1_2 = f"""insert into game_settings(player_id,speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume)
+    values ({pl_id},{speed},
+    {grey_thershold},{red_threshold},
+    {blue_thershold},{difficulty},
+    {costume});"""
+    cursor.execute(q1_2)
+    mydb.commit()
 
 
 def get_settings_sql_gnd(pl_id, wld_id):
@@ -37,15 +62,17 @@ def get_settings_sql_gnd(pl_id, wld_id):
     q1 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {player_id} ;"""
 
-    q2 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
-      from game_default_settings;"""
-
     q3 = f"""select seed from game_worlds where player_id = {player_id} and world_id = {world_id}"""
 
     try:
         print("q1")
         cursor.execute(q1)
         res = cursor.fetchone()
+
+        if res == None:
+            insert_sql_settings(mydb, cursor, pl_id)
+            cursor.execute(q1)
+            res = cursor.fetchone()
         print(res)
         (
             BLUE_THRESHOLD,
@@ -55,34 +82,18 @@ def get_settings_sql_gnd(pl_id, wld_id):
             costume,
         ) = res
     except:
-        print("q2")
-        cursor.execute(q2)
-        res = cursor.fetchone()
-        print(res)
-        (
-            BLUE_THRESHOLD,
-            RED_THRESHOLD,
-            GREY_THRESHOLD,
-            difficulty,
-            costume,
-        ) = res
-        in_q3 = f"""insert into game_settings grey_threshold,red_threshold,blue_threshold,difficulty,costume
-    values ({BLUE_THRESHOLD},{RED_THRESHOLD},{GREY_THRESHOLD},{difficulty},{costume})
-    where player_id = {player_id}; """
-        cursor.execute(q2)
-        mydb.commit()
+        insert_sql_settings(mydb, cursor, pl_id)
+
+    gnd_gen_init(seed)
 
 
-def update_variables(G_OFFSET1, R_OFFSET1, B_OFFSET1, G_THRESH1, R_THRESH1, B_THRESH1):
-    global GREY_OFFSET, RED_OFFSET, BLUE_OFFSET, GREY_THRESHOLD, RED_THRESHOLD, BLUE_THRESHOLD
-    print("before offests:", GREY_OFFSET, RED_OFFSET, BLUE_OFFSET)
-
-    G_OFFSET1, R_OFFSET1, B_OFFSET1 = GREY_OFFSET, RED_OFFSET, BLUE_OFFSET
-    G_THRESH1, R_THRESH1, B_THRESH1 = GREY_THRESHOLD, RED_THRESHOLD, BLUE_THRESHOLD
-    print("new offests:", GREY_OFFSET, RED_OFFSET, BLUE_OFFSET)
+noise_generator = None
 
 
-noise_generator = opensimplex.OpenSimplex(seed=seed)
+def gnd_gen_init(seed):
+    global noise_generator
+    noise_generator = opensimplex.OpenSimplex(seed=seed)
+
 
 # ============================ solaris astroid space generation ==============================
 

@@ -84,6 +84,21 @@ def check_user(username, passwd):
     return res
 
 
+def check_sql_database():
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database=""
+    )
+    cursor = mydb.cursor()
+
+    q1 = "use project_solaris;"
+
+    try:
+        cursor.execute(q1)
+        res = cursor.fetchone()
+    except:
+        import setup.db_init
+
+
 def close_root_screen():
     global app_scr
     app_scr.quit()
@@ -91,16 +106,16 @@ def close_root_screen():
 
 def login():
     global uid, uname, passw, checkbox
-    uname = user_entry.get()
-    passw = user_pass.get()
+    uname = luser_entry.get()
+    passw = luser_pass.get()
     player_id = check_user(uname, passw)
     re_u = checkbox.get()
     if re_u == True:
         rem_user(uname, passw, player_id)
 
     if player_id != None:
-        uname = user_entry.get()
-        passw = user_pass.get()
+        uname = luser_entry.get()
+        passw = luser_pass.get()
         uid = player_id[0]
         tkmb.showinfo(title="Login Successful", message="logged in Successfully")
         title_screen()
@@ -110,7 +125,7 @@ def login():
 
 # --------------------------login screen --------------------------
 def login_screen():
-    global user_entry, user_info, user_pass, checkbox, app_scr
+    global luser_entry, user_info, luser_pass, checkbox, app_scr
     load_user()
     app_scr.geometry("450x600")
     app_scr.title("login screen")
@@ -134,13 +149,13 @@ def login_screen():
     label = ctk.CTkLabel(master=frame, text="enter user crentials")
     label.pack(pady=12, padx=10)
 
-    user_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
-    user_entry.pack(pady=12, padx=15)
+    luser_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
+    luser_entry.pack(pady=12, padx=15)
 
-    user_pass = ctk.CTkEntry(
+    luser_pass = ctk.CTkEntry(
         master=frame, placeholder_text="Password", show="*", width=220
     )
-    user_pass.pack(pady=12, padx=10)
+    luser_pass.pack(pady=12, padx=10)
 
     button = ctk.CTkButton(master=frame, text="Login", command=login)
     button.pack(pady=12, padx=10)
@@ -159,8 +174,8 @@ def login_screen():
     checkbox.pack(pady=12, padx=10)
 
     if autofill_user == True and user_info != None:
-        user_entry.insert(0, str(user_info["username"]))  # autofill username passwd
-        user_pass.insert(0, str(user_info["password"]))
+        luser_entry.insert(0, str(user_info["username"]))  # autofill username passwd
+        luser_pass.insert(0, str(user_info["password"]))
         checkbox.select()
 
     app_scr.mainloop()
@@ -170,8 +185,8 @@ def login_screen():
 
 user_valid = False
 
-user_pass = None
-user_entry = None
+suser_pass = None
+suser_entry = None
 u_valid_text = None
 confirm_user_pass = None
 checkbox = None
@@ -237,8 +252,8 @@ def register_user(username, passwd):
 
 
 def register():
-    uname = user_entry.get()
-    passw = user_pass.get()
+    uname = suser_entry.get()
+    passw = suser_pass.get()
     conf_passw = confirm_user_pass.get()
 
     if passw == conf_passw:
@@ -268,7 +283,7 @@ def register():
 
 
 def sign_up_screen():
-    global user_entry, user_pass, confirm_user_pass, u_valid_text, checkbox, app_scr
+    global suser_entry, suser_pass, confirm_user_pass, u_valid_text, checkbox, app_scr
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
@@ -292,17 +307,17 @@ def sign_up_screen():
     label = ctk.CTkLabel(master=frame, text="enter user crentials")
     label.pack(pady=12, padx=10)
 
-    user_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
-    user_entry.pack(pady=3, padx=15)
-    user_entry.bind("<KeyRelease>", check_username)
+    suser_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
+    suser_entry.pack(pady=3, padx=15)
+    suser_entry.bind("<KeyRelease>", check_username)
 
     u_valid_text = ctk.CTkLabel(master=frame, text="")
     u_valid_text.pack(pady=1, padx=10)
 
-    user_pass = ctk.CTkEntry(
+    suser_pass = ctk.CTkEntry(
         master=frame, placeholder_text="Password", show="*", width=220
     )
-    user_pass.pack(pady=12, padx=10)
+    suser_pass.pack(pady=12, padx=10)
 
     confirm_user_pass = ctk.CTkEntry(
         master=frame, placeholder_text="confirm Password", show="*", width=220
@@ -385,6 +400,7 @@ def reset_admin():
 
 
 def check_admin(admin_name, passwd):
+    print(admin_name, passwd)
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -451,37 +467,29 @@ def admin_settings_screen():
     )
     difficulty_box.pack(pady=10)
 
-    costume = ctk.CTkOptionMenu(
-        inFrame,
-        font=("", 16),
-        dynamic_resizing=False,
-        variable=costume_val,
-        command=costume_update,
-        values=["space craft 1", "space craft 2", "space craft 3"],
-    )
-    costume.pack(pady=10)
-
     label = ctk.CTkLabel(inFrame, text="admin settings:")
     label.pack(pady=4)
 
-    sp = ctk.CTkEntry(master=frame, placeholder_text="player speed", width=220)
+    sp = ctk.CTkEntry(master=inFrame, placeholder_text="player speed", width=220)
     sp.pack(pady=12, padx=15)
 
-    r_off = ctk.CTkEntry(master=frame, placeholder_text="red offset", width=220)
+    r_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     r_off.pack(pady=12, padx=15)
 
-    b_off = ctk.CTkEntry(master=frame, placeholder_text="red offset", width=220)
+    b_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     b_off.pack(pady=12, padx=15)
 
-    g_off = ctk.CTkEntry(master=frame, placeholder_text="red offset", width=220)
+    g_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     g_off.pack(pady=12, padx=15)
 
-    # sql
-    #
-    #
+    admin_data = solaris.game_script.get_settings_sql_player(uid)
+    # speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
 
-    label = ctk.CTkLabel(inFrame, text="change space craft:")
-    label.pack(pady=5)
+    sp.insert(0, str(admin_data[0]))
+
+    r_off.insert(0, str(admin_data[2]))
+    b_off.insert(0, str(admin_data[3]))
+    g_off.insert(0, str(admin_data[1]))
 
     f3 = ctk.CTkFrame(master=frame)
     f3.pack(side="top", pady=20)
@@ -499,7 +507,6 @@ def admin_settings_screen():
     admin_settings_dict["red_threshold"] = r_off.get()
     admin_settings_dict["grey_threshold"] = g_off.get()
     admin_settings_dict["blue_threshold"] = sp.get()
-    admin_settings_dict[""] = sp.get()
 
     button = ctk.CTkButton(
         master=f3,
@@ -524,10 +531,12 @@ def admin_settings_screen():
 def admin_options():
     global app_scr
     admin_name = ctk.CTkInputDialog(text="enter admin name:", title="admin id")
+    admin_name = admin_name.get_input()
 
     admin_pass = ctk.CTkInputDialog(text="enter admin passwd:", title="admin passwd")
+    admin_pass = admin_pass.get_input()
 
-    acc = check_admin(admin_name.get_input(), admin_pass.get_input())
+    acc = check_admin(admin_name, admin_pass)
 
     if acc != None:
         app_scr.destroy()
@@ -537,6 +546,14 @@ def admin_options():
             title="admin login Failed",
             message="Invalid username or password",
         )
+
+
+def logout():
+    forget_user()
+    print("logged out")
+    print("\n\n restart app ")
+    app_scr.destroy()
+    exit()
 
 
 def settings_screen():
@@ -578,6 +595,9 @@ def settings_screen():
     difficulty.pack(pady=10)
     difficulty = diff_dict.get(difficulty_text_val.get())
 
+    label = ctk.CTkLabel(inFrame, text="change space craft:")
+    label.pack(pady=5)
+
     costumes = ctk.CTkOptionMenu(
         inFrame,
         font=("", 16),
@@ -588,11 +608,14 @@ def settings_screen():
     )
     costumes.pack(pady=10)
 
-    empty = ctk.CTkLabel(inFrame, text="")
-    empty.pack()
+    logout_button = ctk.CTkButton(
+        master=inFrame,
+        text="logout",
+        font=("", 16),
+        command=logout,
+    )
+    logout_button.pack(pady=10)
 
-    label = ctk.CTkLabel(inFrame, text="change space craft:")
-    label.pack(pady=5)
     empty = ctk.CTkLabel(inFrame, text="")
     empty.pack()
 
@@ -700,9 +723,10 @@ def create_world():
         mydb.close()
 
         app_scr.update()
-        app_scr.update_idletasks()
 
+        app_scr.destroy()
         worlds = get_worlds_data()
+        play_screen()
 
 
 def delete_world():
@@ -726,14 +750,17 @@ def delete_world():
 
         app_scr.update()
         app_scr.update_idletasks()
-
+        app_scr.destroy()
+        play_screen()
         worlds = get_worlds_data()
 
 
 def play_world():
     global world_id, uid
     world_id = int(world_var.get())
-
+    solaris.game_script.player_id = uid
+    solaris.game_script.world_id = world_id
+    app_scr.destroy()
     solaris.game_script.main(uid, world_id)
 
 
@@ -929,6 +956,7 @@ def title_screen():
 
     app_scr.destroy()
     app_scr = ctk.CTk()
+
     app_scr.geometry("450x400")
     app_scr.title("title screen")
 
@@ -961,6 +989,7 @@ def title_screen():
     app_scr.mainloop()
 
 
+check_sql_database()
 load_user()
 print(user_info)
 
