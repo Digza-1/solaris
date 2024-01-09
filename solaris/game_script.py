@@ -64,7 +64,7 @@ sqlPass = "123"
 
 world_id = 0
 player_id = 0
-seed = 0
+seed = None
 
 
 def insert_sql_settings(mydb, cursor, pl_id):
@@ -141,7 +141,7 @@ def get_settings_sql(pl_id, wld_id):
     q2 = f"""select seed,world_name,x_pos,y_pos,obj_x,obj_y
       from game_worlds where player_id = {pl_id} and world_id = {wld_id} ;"""
 
-    print("q1")
+    print("q1", "player id:", pl_id)
 
     try:
         cursor.execute(q1)
@@ -169,15 +169,18 @@ def get_settings_sql(pl_id, wld_id):
 
     cursor.execute(q2)
     res = cursor.fetchone()
-    print("ln 105:", res)
-    seed, w_name, xpos, ypos, objx, objy = res
-    seed = int(seed)
-    w_name = str(w_name)
+    print("ln 172:", res)
+    if res != None:
+        seed, w_name, xpos, ypos, objx, objy = res
+        seed = int(seed)
+        w_name = str(w_name)
+    else:
+        print("==== res = none =========")
 
-    grey_thershold = float(grey_thershold)
-    red_threshold = float(red_threshold)
-    blue_thershold = float(blue_thershold)
     try:
+        grey_thershold = float(grey_thershold)
+        red_threshold = float(red_threshold)
+        blue_thershold = float(blue_thershold)
         xpos = int(xpos)
         ypos = int(ypos)
         objx = int(objx)
@@ -189,6 +192,11 @@ def get_settings_sql(pl_id, wld_id):
     if xpos or ypos:
         player_rect.x, player_rect.y = int(xpos), int(ypos)
 
+    if not objx:
+        objective_pos = gen_objective()
+    else:
+        objective_pos = [objx, objy]
+
     gnd.seed = int(seed)
     gnd.gnd_gen_init(int(seed))
     gnd.BLUE_THRESHOLD, gnd.RED_THRESHOLD, gnd.GREY_THRESHOLD = (
@@ -198,26 +206,25 @@ def get_settings_sql(pl_id, wld_id):
     )
     gnd.difficulty = difficulty
 
-    if not objx:
-        objective_pos = gen_objective()
-    else:
-        objective_pos = [objx, objy]
-
     print("objective_pos", objective_pos)
 
     # get player stats
-    q3 = f"""select distance_moved,dist_from_obj,
-    collisions,player_id,world_id from player_stats where player_id = {pl_id} """
-    try:
-        cursor.execute(q3)
-        res = cursor.fetchone()
-    except:
+    q3 = f"""select distance_moved,collisions 
+    from player_stats where player_id = {pl_id} and world_id = {wld_id}; """
+
+    cursor.execute(q3)
+    res = cursor.fetchone()
+
+    if res == None:
         stats_q_1 = f"""insert into player_stats (distance_moved,dist_from_obj,
-    collisions,player_id,world_id) values (0,0,0,{pl_id},{wld_id}) """
+    collisions,player_id,world_id) values (0,0,0,{pl_id},{wld_id}); """
         cursor.execute(stats_q_1)
         mydb.commit()
-        cursor.execute(q3)
-        res = cursor.fetchone()
+
+        res = (0, 0)
+
+    player_stats["dist_moved"] = res[0]
+    player_stats["collisions"] = res[1]
 
 
 def save_state(pl_id, wld_id):
@@ -231,7 +238,7 @@ def save_state(pl_id, wld_id):
             ((xpos - objective_pos[0]) ** 2 + (ypos - objective_pos[1]) ** 2) ** 0.5
         )
     except:
-        pass
+        obj_dist = 0
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
@@ -248,6 +255,7 @@ def save_state(pl_id, wld_id):
     where player_id = {pl_id} and world_id = {wld_id}  """
 
     cursor.execute(save_q)
+    cursor.execute(stats_q)
     mydb.commit()
 
 
@@ -378,8 +386,13 @@ def collision_test(rect, tiles):
 
 
 def gen_objective():
-    objx = random.randint(10, 1000) * 897
-    objy = random.randint(10, 1000) * 894
+    offs = random.randint(-15, 15)
+    objx = random.randint(-150, 150) * 10 * offs
+    objy = random.randint(-150, 50) * 10 * offs
+    while offs * objx * objy == 0:
+        offs = random.randint(-15, 15)
+        objx = random.randint(-150, 150) * 10 * offs
+        objy = random.randint(-150, 50) * 10 * offs
 
     obj_pos = objx, objy
 
@@ -387,12 +400,12 @@ def gen_objective():
 
 
 def objective_reached():
-    px_reached = round(round(player_rect.x) // objective_pos[0])
-    py_reached = round(round(player_rect.x) // objective_pos[1])
-
-    if px_reached and py_reached:
-        print("objective reached")
-        add_text("objective reached", WINDOW_SIZE // 2, 150, 10)
+    px_reached = round(player_rect.x) / int(objective_pos[0])
+    py_reached = round(player_rect.y) / int(objective_pos[1])
+    print(px_reached)
+    if px_reached == 1 and py_reached == 1:
+        # print("objective reached")
+        add_text("objective reached", 200, 150, 10)
 
 
 def move(rect, movement, tiles):
@@ -456,7 +469,7 @@ def main(pl_id, wld_id):
     )  # used as the low scaled surface for rendering
     surface0 = pyg.Surface(WINDOW_SIZE, pyg.SRCALPHA)
 
-    dev_m = False  # --------------------
+    dev_m = True  # --------------------
 
     game_map = {}
 
@@ -478,10 +491,10 @@ def main(pl_id, wld_id):
     player_img1 = pyg.image.load("solaris/assets/player.png").convert()
     player_img1.set_colorkey((0, 0, 0))
 
-    player_img2 = pyg.image.load("solaris/assets/player.png").convert()
+    player_img2 = pyg.image.load("solaris/assets/player1.png").convert()
     player_img2.set_colorkey((0, 0, 0))
 
-    player_img3 = pyg.image.load("solaris/assets/player.png").convert()
+    player_img3 = pyg.image.load("solaris/assets/player2.png").convert()
     player_img3.set_colorkey((0, 0, 0))
 
     tile_index = {
@@ -598,7 +611,8 @@ def main(pl_id, wld_id):
 
         if player_movement[1] < 0:
             player_flipy = False
-
+        if player_movement[1] == 0 and player_movement[0] == 0:
+            objective_reached()
         if dev_m == True:
             add_text(f"{round(clock.get_fps())}", 350, 330, 10)
             add_text(f"{player_movement}", 350, 383, 10)
@@ -612,7 +626,9 @@ def main(pl_id, wld_id):
 
         # draw player
         display.blit(
-            pyg.transform.flip(player_img1, player_flipx, player_flipy),
+            pyg.transform.flip(
+                player_costume_index[costume], player_flipx, player_flipy
+            ),
             (player_rect.x - scroll[0], player_rect.y - scroll[1]),
         )
 
@@ -627,4 +643,4 @@ def main(pl_id, wld_id):
 
 
 if __name__ == "__main__":
-    main(1, 1)
+    main(4, 6)

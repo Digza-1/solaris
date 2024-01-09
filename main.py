@@ -118,7 +118,8 @@ def login():
         passw = luser_pass.get()
         uid = player_id[0]
         tkmb.showinfo(title="Login Successful", message="logged in Successfully")
-        title_screen()
+        print("restart program to continue")
+        exit()
     else:
         tkmb.showerror(title="Login Failed", message="Invalid Username or password")
 
@@ -347,14 +348,20 @@ def save_admin_settings():
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
+ 
+collect new data from text input :
+    # ====
 
-    q = f"""update settings set difficulty = {difficulty}, speed = {admin_settings_dict['speed']},
+
+    print(admin_settings_dict)
+    q = f"""update game_settings set difficulty = {difficulty}, speed = {admin_settings_dict['speed']},
       grey_threshold = {admin_settings_dict['grey_threshold']},
       red_threshold ={admin_settings_dict['red_threshold']}, 
-      blue_threshold = {admin_settings_dict['blue_threshold']} ,  where player_id = {uid};"""
+      blue_threshold = {admin_settings_dict['blue_threshold']} where player_id = {uid};"""
 
     mycursor.execute(q)
     mydb.commit()
+    print("settings saved")
 
 
 def save_user_settings():
@@ -378,9 +385,9 @@ def reset():
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
-    mycursor = mydb.cursor()
+    cursor = mydb.cursor()
 
-    q = "update settings set difficulty = {}, costume = {} ;".format(
+    q = "update game_settings set difficulty = {}, costume = {} ;".format(
         difficulty, costume
     )
 
@@ -388,15 +395,33 @@ def reset():
 def reset_admin():
     global difficulty
     difficulty = 1
-
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
-    mycursor = mydb.cursor()
-    q2 = "select difficulty , costume from default_settings; "
-    q = "update settings set difficulty = {} where player_id = {};".format(
-        difficulty, uid
-    )
+    cursor = mydb.cursor()
+
+    q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
+      from game_default_settings; """
+
+    cursor.execute(q1_1)
+    res1 = cursor.fetchone()
+    (
+        speed,
+        grey_threshold,
+        red_threshold,
+        blue_threshold,
+        difficulty,
+        costume,
+    ) = res1
+
+    q1_2 = f"""update game_settings
+    speed = {speed},grey_threshold = {grey_threshold},
+    red_threshold = {red_threshold}, blue_threshold = {blue_threshold},
+    difficulty = {difficulty},costume = {costume} 
+    where player_id ={uid};"""
+
+    cursor.execute(q1_2)
+    mydb.commit()
 
 
 def check_admin(admin_name, passwd):
@@ -470,15 +495,23 @@ def admin_settings_screen():
     label = ctk.CTkLabel(inFrame, text="admin settings:")
     label.pack(pady=4)
 
+    label = ctk.CTkLabel(inFrame, text="player speed:")
+    label.pack(pady=4)
     sp = ctk.CTkEntry(master=inFrame, placeholder_text="player speed", width=220)
     sp.pack(pady=12, padx=15)
 
+    label = ctk.CTkLabel(inFrame, text="red offset:")
+    label.pack(pady=4)
     r_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     r_off.pack(pady=12, padx=15)
 
+    label = ctk.CTkLabel(inFrame, text="red offset:")
+    label.pack(pady=4)
     b_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     b_off.pack(pady=12, padx=15)
 
+    label = ctk.CTkLabel(inFrame, text="red offset:")
+    label.pack(pady=4)
     g_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     g_off.pack(pady=12, padx=15)
 
@@ -894,11 +927,12 @@ def get_stats_data(uid):
         mycursor.close()
         mydb.close()
     else:
-        res = None
+        res = {}
     return res
 
 
 stats_d = {}
+
 stat_d = get_stats_data(uid)
 
 
@@ -914,28 +948,20 @@ def stats_screen():
     label = ctk.CTkLabel(app_scr, text="statistics")
     label.pack(pady=20)
 
-    frame = ctk.CTkScrollableFrame(master=app_scr)
+    frame = ctk.CTkScrollableFrame(master=app_scr, bg_color="transparent")
     frame.pack(pady=10, padx=10, fill="both", expand=True)
 
     for k, j in stats_d.items():
+        print(k, j)
         in_frame = ctk.CTkFrame(frame)
 
         stat = ctk.CTkLabel(master=in_frame, text=f"{k}")
         stat.pack(side="left", pady=10)
 
-        stat = ctk.CTkLabel(master=in_frame, text=f" {j}")
+        stat = ctk.CTkLabel(master=in_frame, text=f"{j}")
         stat.pack(side="right", pady=10, padx=10)
 
         in_frame.pack(side="top")
-
-    button = ctk.CTkButton(
-        master=frame,
-        text="reset",
-        bg_color="transparent",
-        fg_color="transparent",
-        command=None,
-    )
-    button.pack(pady=20, side="left")
 
     button.pack(side="right", padx=20)
 
@@ -969,16 +995,17 @@ def title_screen():
     label.pack(pady=20)
 
     frame = ctk.CTkFrame(master=app_scr)
-    frame.pack(pady=1, padx=1, fill="none", expand=True)
+    frame.pack(pady=5, padx=5, fill="none", expand=True)
 
     fr3 = ctk.CTkFrame(master=frame)
-    fr3.pack(pady=2)
-
+    fr3.pack(pady=5)
     settings_button = ctk.CTkButton(master=fr3, text="Play", command=play_screen)
-    settings_button.pack(pady=10)
+    settings_button.pack(pady=10, padx=2)
 
-    fr1 = ctk.CTkFrame(master=frame)
-    fr1.pack()
+    fr1 = ctk.CTkFrame(
+        master=frame,
+    )
+    fr1.pack(padx=5)
     # buttons load game, new game
     load_button = ctk.CTkButton(master=fr1, text="options", command=settings_screen)
     load_button.pack(side="left", pady=10, padx=10)
@@ -992,7 +1019,6 @@ def title_screen():
 check_sql_database()
 load_user()
 print(user_info)
-
 
 if user_info == None:
     login_screen()

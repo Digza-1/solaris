@@ -48,8 +48,8 @@ obj_y int);
 """
 
 # player stats
-q8 = """create table player_stats ( player_id int primary key,
-world_id int,
+q8 = """create table player_stats ( player_id int ,
+world_id int primary key,
 distance_moved int,
 dist_from_obj int,
 collisions int)
@@ -61,7 +61,7 @@ inq2 = "insert into admins(username,passwd) values('admin','root');"
 # initialise game_default_settings
 inq3 = """insert into game_default_settings (
     speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume
-) values (0.1, 0.25, 0.01, 0.1, 1, 0);"""
+) values (0.1, 0.25, 0.01, 0.1, 1, 1);"""
 
 inq4 = """insert into game_settings (
     player_id, seed, speed, grey_threshold, red_threshold, blue_threshold, difficulty, costume

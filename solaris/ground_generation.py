@@ -90,9 +90,11 @@ def get_settings_sql_gnd(pl_id, wld_id):
 noise_generator = None
 
 
-def gnd_gen_init(seed):
-    global noise_generator
-    noise_generator = opensimplex.OpenSimplex(seed=seed)
+def gnd_gen_init(seed1):
+    global noise_generator, seed
+    print("seed = ", seed1)
+    seed = seed1
+    noise_generator = opensimplex.OpenSimplex(seed=seed1)
 
 
 # ============================ solaris astroid space generation ==============================
