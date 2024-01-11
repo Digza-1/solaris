@@ -57,7 +57,6 @@ def load_user():
     global autofill_user, user_info, uid
     try:
         user_info = pickle.load(open("rem_user.pkl", "rb"))
-        print(user_info, "u info")
     except:
         autofill_user = False
 
@@ -232,7 +231,6 @@ def register_user(username, passwd):
     res = None
     if user_valid == True:
         q = f"insert into users (username,passwd) values ('{username}','{passwd}'); "
-        print(q)
         mycursor.execute(q)
         mydb.commit()
 
@@ -289,8 +287,9 @@ def sign_up_screen():
     ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
     app_scr = ctk.CTkToplevel()
-    app_scr.geometry("450x600")
+    app_scr.geometry("455x600")
     app_scr.title("sign up")
+    app_scr.resizable(height=True, width=False)
 
     bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
     label = ctk.CTkLabel(app_scr, image=bg_img3, text="")
@@ -340,18 +339,24 @@ def sign_up_screen():
 
     app_scr.mainloop()
 
+    # -----------------------settings--------------------------
 
-# -----------------------settings--------------------------
+
+sp = r_off = g_off = b_off = None
+
+
 def save_admin_settings():
+    global sp, r_off, g_off, b_off
     global difficulty, admin_settings_dict
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
     mycursor = mydb.cursor()
- 
-collect new data from text input :
-    # ====
 
+    admin_settings_dict["speed"] = sp.get()
+    admin_settings_dict["red_threshold"] = r_off.get()
+    admin_settings_dict["grey_threshold"] = g_off.get()
+    admin_settings_dict["blue_threshold"] = b_off.get()
 
     print(admin_settings_dict)
     q = f"""update game_settings set difficulty = {difficulty}, speed = {admin_settings_dict['speed']},
@@ -425,7 +430,6 @@ def reset_admin():
 
 
 def check_admin(admin_name, passwd):
-    print(admin_name, passwd)
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -464,9 +468,10 @@ admin_settings_dict = {}
 
 def admin_settings_screen():
     global difficulty_text_val, app_scr
+    global sp, r_off, g_off, b_off
 
     app_scr = ctk.CTkToplevel()
-    app_scr.geometry("450x600")
+    app_scr.geometry("455x600")
     app_scr.title("admin settings screen")
     difficulty_text_val = ctk.Variable(app_scr)
     difficulty_text_val.set("normal")
@@ -539,7 +544,7 @@ def admin_settings_screen():
     admin_settings_dict["speed"] = sp.get()
     admin_settings_dict["red_threshold"] = r_off.get()
     admin_settings_dict["grey_threshold"] = g_off.get()
-    admin_settings_dict["blue_threshold"] = sp.get()
+    admin_settings_dict["blue_threshold"] = b_off.get()
 
     button = ctk.CTkButton(
         master=f3,
@@ -595,6 +600,7 @@ def settings_screen():
     app_scr = ctk.CTkToplevel()
     app_scr.geometry("450x600")
     app_scr.title("settings screen")
+    app_scr.resizable(height=False)
 
     difficulty_text_val = ctk.Variable(app_scr)
     difficulty_text_val.set("normal")
@@ -791,10 +797,11 @@ def delete_world():
 def play_world():
     global world_id, uid
     world_id = int(world_var.get())
-    solaris.game_script.player_id = uid
-    solaris.game_script.world_id = world_id
-    app_scr.destroy()
-    solaris.game_script.main(uid, world_id)
+    if world_id != -1:
+        solaris.game_script.player_id = uid
+        solaris.game_script.world_id = world_id
+        app_scr.destroy()
+        solaris.game_script.main(uid, world_id)
 
 
 # ---------------------- play screen -------------------
@@ -806,6 +813,7 @@ def play_screen():
     app_scr = ctk.CTkToplevel()
     app_scr.geometry("600x600")
     app_scr.title("play screen")
+    app_scr.resizable(width=False, height=True)
 
     label = ctk.CTkLabel(app_scr, text="play")
     label.pack(pady=20)
@@ -833,8 +841,7 @@ def play_screen():
                 value=w_id,
             )
             in_frame.pack(pady=5, fill="x")
-
-        #
+        world_var.set(-1)
 
     buttons_frame = ctk.CTkFrame(master=app_scr, width=300)
     buttons_frame.pack()
@@ -901,49 +908,44 @@ def play_screen():
 stats_n = "distance_moved,dist_from_obj,collisions"
 
 
-def stats_to_dict(stats):
-    # list to dict
-    d = {}
-    ind = 0
-    for i in stats_n.split(","):
-        d[i] = stats[ind]
-        ind += 1
-
-
 def get_stats_data(uid):
-    if uid != None:
+    if uid != None and world_id != -1:
         mydb = mysql.connector.connect(
             host="localhost", user="root", passwd=sqlPass, database="project_solaris"
         )
         mycursor = mydb.cursor()
 
-        query = f"select {stats_n} from player_stats where player_id = {uid};"
+        query = f"select {stats_n} from player_stats where player_id = {uid} and world_id = {world_id};"
 
         mycursor.execute(query)
-        res = mycursor.fetchall()
+        res = mycursor.fetchone()
 
         print(res)
+        stat_d = {}
+        # distance_moved,dist_from_obj,collisions
+        l = [("distance_moved", 0), ("dist_from_obj", 1), ("collisions", 2)]
+        for i, j in l:
+            stats_d[i] = res[j]
 
         mycursor.close()
         mydb.close()
     else:
-        res = {}
-    return res
+        stat_d = {}
+    return stat_d
 
 
 stats_d = {}
 
-stat_d = get_stats_data(uid)
-
 
 def stats_screen():
-    global app_scr
-    stat_li = get_stats_data(uid)
-    print(stat_li)
+    global app_scr, world_id
+    world_id = int(world_var.get())
+    stat_d = get_stats_data(uid)
 
     app_scr = ctk.CTkToplevel()
     app_scr.geometry("450x600")
     app_scr.title("stats screen")
+    app_scr.resizable(width=False, height=False)
 
     label = ctk.CTkLabel(app_scr, text="statistics")
     label.pack(pady=20)
@@ -951,26 +953,25 @@ def stats_screen():
     frame = ctk.CTkScrollableFrame(master=app_scr, bg_color="transparent")
     frame.pack(pady=10, padx=10, fill="both", expand=True)
 
+    in_frame0 = ctk.CTkFrame(frame, width=500, height=350)
+    in_frame0.pack(pady=5)
     for k, j in stats_d.items():
         print(k, j)
-        in_frame = ctk.CTkFrame(frame)
+        in_frame = ctk.CTkFrame(in_frame0, width=400)
+        in_frame.pack(side="top", pady=5, padx=5, fill="x")
 
         stat = ctk.CTkLabel(master=in_frame, text=f"{k}")
-        stat.pack(side="left", pady=10)
+        stat.pack(side="left", padx=5, pady=3)
 
         stat = ctk.CTkLabel(master=in_frame, text=f"{j}")
-        stat.pack(side="right", pady=10, padx=10)
-
-        in_frame.pack(side="top")
-
-    button.pack(side="right", padx=20)
+        stat.pack(side="right", pady=10, padx=3)
 
     button = ctk.CTkButton(
         master=frame,
         text="back",
         # bg_color="transparent",
         fg_color="transparent",
-        command=None,
+        command=app_scr.destroy,
     )
 
     button.pack(side="top", pady=30)
@@ -982,9 +983,9 @@ def title_screen():
 
     app_scr.destroy()
     app_scr = ctk.CTk()
-
     app_scr.geometry("450x400")
     app_scr.title("title screen")
+    app_scr.resizable(width=False, height=False)
 
     bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg2.jpg"), size=(800, 800))
 
