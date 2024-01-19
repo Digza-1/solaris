@@ -699,7 +699,6 @@ def settings_screen():
 
 
 def get_worlds_data():
-    print(uid)
 
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
@@ -710,7 +709,7 @@ def get_worlds_data():
     mycursor.execute(query)
 
     res = mycursor.fetchall()
-    print(res)
+    print("worlds data:",res)
     mycursor.close()
     mydb.close()
 
@@ -920,7 +919,7 @@ def get_stats_data(uid):
         mycursor.execute(query)
         res = mycursor.fetchone()
 
-        print(res)
+        print("stats:",res)
         stat_d = {}
         # distance_moved,dist_from_obj,collisions
         l = [("distance_moved", 0), ("dist_from_obj", 1), ("collisions", 2)]
@@ -956,7 +955,6 @@ def stats_screen():
     in_frame0 = ctk.CTkFrame(frame, width=500, height=350)
     in_frame0.pack(pady=5)
     for k, j in stats_d.items():
-        print(k, j)
         in_frame = ctk.CTkFrame(in_frame0, width=400)
         in_frame.pack(side="top", pady=5, padx=5, fill="x")
 
@@ -975,7 +973,6 @@ def stats_screen():
     )
 
     button.pack(side="top", pady=30)
-    # app.mainloop()
 
 
 def title_screen():

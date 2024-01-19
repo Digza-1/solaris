@@ -23,11 +23,19 @@ moving_left = False
 moving_up = False
 moving_down = False
 player_health = 100
+
+# ============= damage & regen ==============
+collision_difficulty_damage = {1: 1, 2: 3, 3: 6}
+player_regen_health = {1: 0.04, 2: 0.01, 3: 0.006}
+
+dev_m = True  # --------------------
+
 pause = False
+game_over = False
+retry = False
 
 speed = 0.1
 scroll = [0, 0]
-dev_m = False  # --------------------
 cliping = True
 CHUNK_SIZE = 8
 TILE_SIZE = 16
@@ -55,7 +63,11 @@ player_rect = None
 
 player_stats = {"dist_moved": 0, "collisions": 0}
 initial_dist_moved = 0
-collision_state = [0, 0]
+
+collision_state_prev = {"top": False, "bottom": False, "right": False, "left": False}
+collisions_cur = 0
+collision_state = {}
+
 
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
@@ -68,7 +80,7 @@ seed = None
 
 
 def insert_sql_settings(mydb, cursor, pl_id):
-    print("creating settings ")
+    print("creating settings.. ")
     q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings; """
 
@@ -92,6 +104,18 @@ def insert_sql_settings(mydb, cursor, pl_id):
     mydb.commit()
 
 
+def get_player_pos(pl_id, wld_id):
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    cursor = mydb.cursor()
+
+    q1 = f"""select x_pos,y_pos from game_worlds where player_id = {pl_id} and world_id = {wld_id} ;"""
+
+    cursor.execute(q1)
+    pos = cursor.fetchone()
+
+
 def get_settings_sql_player(pl_id):
     global player_id
     global speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
@@ -113,7 +137,8 @@ def get_settings_sql_player(pl_id):
         cursor.execute(q1)
         res = cursor.fetchone()
 
-    print(res)
+    if dev_m:
+        print(res)
     (
         speed,
         grey_thershold,
@@ -141,8 +166,6 @@ def get_settings_sql(pl_id, wld_id):
     q2 = f"""select seed,world_name,x_pos,y_pos,obj_x,obj_y
       from game_worlds where player_id = {pl_id} and world_id = {wld_id} ;"""
 
-    print("q1", "player id:", pl_id)
-
     try:
         cursor.execute(q1)
         res = cursor.fetchone()
@@ -157,7 +180,8 @@ def get_settings_sql(pl_id, wld_id):
         cursor.execute(q1)
         res = cursor.fetchone()
 
-    print(res)
+    if dev_m:
+        print(res)
     (
         speed,
         grey_thershold,
@@ -169,13 +193,14 @@ def get_settings_sql(pl_id, wld_id):
 
     cursor.execute(q2)
     res = cursor.fetchone()
-    print("ln 172:", res)
+    if dev_m:
+        print("ln 172:", res)
     if res != None:
         seed, w_name, xpos, ypos, objx, objy = res
         seed = int(seed)
         w_name = str(w_name)
     else:
-        print("==== res = none =========")
+        print("res = none")
 
     try:
         grey_thershold = float(grey_thershold)
@@ -188,7 +213,8 @@ def get_settings_sql(pl_id, wld_id):
     except:
         pass
 
-    print("x,y pos = = = =", xpos, ypos)
+    if dev_m:
+        print("x,y pos = = = =", xpos, ypos)
     if xpos or ypos:
         player_rect.x, player_rect.y = int(xpos), int(ypos)
 
@@ -206,7 +232,8 @@ def get_settings_sql(pl_id, wld_id):
     )
     gnd.difficulty = difficulty
 
-    print("objective_pos", objective_pos)
+    if dev_m:
+        print("objective_pos", objective_pos)
 
     # get player stats
     q3 = f"""select distance_moved,collisions 
@@ -239,7 +266,7 @@ def save_state(pl_id, wld_id):
         )
     except:
         obj_dist = 0
-
+    player_stats["collisions"] += collisions_cur
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -250,7 +277,7 @@ def save_state(pl_id, wld_id):
     where player_id = {pl_id} and world_id = {wld_id} """
 
     stats_q = f"""update player_stats set 
-    distance_moved= {initial_dist_moved + player_stats['dist_moved']} ,dist_from_obj = {obj_dist},
+    distance_moved= {player_stats['dist_moved']} ,dist_from_obj = {obj_dist},
     collisions = {player_stats['collisions']} 
     where player_id = {pl_id} and world_id = {wld_id}  """
 
@@ -364,7 +391,6 @@ def draw_pause():
     surface0.blit(font.render("save game", True, (0, 255, 0)), (425, 335))
     surface0.blit(font.render("save and quit", True, (0, 255, 0)), (425, 405))
 
-    screen.blit(surface0, (0, 0))
     return resume, save, quit_game
 
 
@@ -374,6 +400,25 @@ def add_text(text1, x, y, size):
     textRect = text.get_rect()
     textRect.center = (x // 2, y // 2)
     display.blit(text, textRect)
+
+
+def game_over_buttons():
+    pyg.draw.rect(
+        screen,
+        (0, 0, 0, 180),
+        [
+            WINDOW_SIZE[0] // 4 - 8,
+            WINDOW_SIZE[1] // 4 - 8,
+            WINDOW_SIZE[0] // 2 + 16,
+            WINDOW_SIZE[1] // 2 + 16,
+        ],
+    )
+    font = pyg.font.Font("freesansbold.ttf", 23)
+
+    retry = pyg.draw.rect(screen, (68, 70, 84, 180), [420, 330, 170, 50], 0, 2)
+
+    screen.blit(font.render("Retry", True, (0, 255, 0)), (425, 335))
+    return retry
 
 
 def collision_test(rect, tiles):
@@ -400,12 +445,12 @@ def gen_objective():
 
 
 def objective_reached():
-    px_reached = round(player_rect.x) / int(objective_pos[0])
-    py_reached = round(player_rect.y) / int(objective_pos[1])
-    print(px_reached)
-    if px_reached == 1 and py_reached == 1:
-        # print("objective reached")
-        add_text("objective reached", 200, 150, 10)
+    global pause
+    px_reached = abs(round(player_rect.x) - int(objective_pos[0]))
+    if px_reached <= 150:
+        py_reached = abs(round(player_rect.y) - int(objective_pos[1]))
+        if py_reached <= 200:
+            add_text("objective reached", 200, 200, 10)
 
 
 def move(rect, movement, tiles):
@@ -424,8 +469,9 @@ def move(rect, movement, tiles):
             elif movement[0] < 0:
                 rect.left = tile.right
                 collision_types["left"] = True
-        player_stats["collisions"] += len(hit_list)
+
     rect.y += movement[1]
+
     if cliping == True:
         hit_list = collision_test(rect, tiles)
 
@@ -451,13 +497,33 @@ def anti_clip(rect, movement, tiles):
     return rect
 
 
+def collision_damage():
+    global player_health, game_over
+    if player_health > 0:
+        player_health -= collision_difficulty_damage[int(difficulty)]
+    else:
+        player_health = 0
+        game_over = True
+
+
+def regenrate_player():
+    global player_health
+    if not game_over:
+        if player_health < 100:
+            player_health += player_regen_health[difficulty]
+        if player_health > 100:
+            player_health = 100
+        if player_health < 0:
+            player_health = 0
+
+
 # =============================== main ===========================
 def main(pl_id, wld_id):
     global screen, scroll, seed, display, tile_rects, player_movement, player_health, pause, tile_index
-    global moving_right, moving_left, moving_up, moving_down, player_flipy, player_flipx
+    global moving_right, moving_left, moving_up, moving_down, player_flipy, player_flipx, game_over
     global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
     global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
-
+    global collisions_cur, collision_state, collision_state_prev, player_stats
     gnd.get_settings_sql_gnd(pl_id, wld_id)
 
     pyg.init()  # initiates pygame
@@ -536,15 +602,21 @@ def main(pl_id, wld_id):
         tile_rects = []
         draw_space(tile_rects)
 
+        if pause:
+            resume_b, save_b, quit_b = draw_pause()
+        if game_over:
+            retry_b = game_over_buttons()
         # =========================== events =========================
         for event in pyg.event.get():  # event loop
             if event.type == pyg.QUIT:
-                running = False
                 save_state(pl_id, wld_id)
                 game_map = {}
+                game_over = False
+                pause = False
+                running = False
 
             if event.type == pyg.KEYDOWN:
-                if not pause:
+                if not pause and not game_over:
                     if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
                         moving_right = True
 
@@ -567,6 +639,11 @@ def main(pl_id, wld_id):
                         moving_left = False
                         moving_up = False
                         moving_down = False
+                if game_over:
+                    moving_right = False
+                    moving_left = False
+                    moving_up = False
+                    moving_down = False
 
                 if event.key == pyg.K_0:
                     player_rect.x += 10000
@@ -582,6 +659,23 @@ def main(pl_id, wld_id):
 
                 if event.key == pyg.K_DOWN or event.key == pyg.K_s:
                     moving_down = False
+
+            # buttons stuff
+            if event.type == pyg.MOUSEBUTTONDOWN and pause:
+                if resume_b.collidepoint(event.pos):
+                    pause = False
+                if save_b.collidepoint(event.pos):
+                    save_state(pl_id, wld_id)
+                if quit_b.collidepoint(event.pos):
+                    save_state(pl_id, wld_id)
+                    game_map = {}
+                    game_over = False
+                    pause = False
+                    running = False
+                if retry_b.collidepoint(event.pos):
+                    player_health = 100
+                    player_init_pos = get_player_pos()
+                    player_rect.x, player_rect.y = player_init_pos
 
         # ================================== movement =====================================
         # movement stuff
@@ -608,21 +702,31 @@ def main(pl_id, wld_id):
 
         if player_movement[1] > 0:
             player_flipy = True
-
         if player_movement[1] < 0:
             player_flipy = False
         if player_movement[1] == 0 and player_movement[0] == 0:
+            regenrate_player()
             objective_reached()
-        if dev_m == True:
+        if dev_m:
             add_text(f"{round(clock.get_fps())}", 350, 330, 10)
             add_text(f"{player_movement}", 350, 383, 10)
 
-        add_text(f"Health: {player_health} %", 450, 370, 10)
+        add_text(f"Health: {round(player_health,1)} %", 450, 370, 10)
         add_text(f"x: {player_rect.x}   ,y: {player_rect.y}", 450, 350, 10)
         add_text(f"objective: {objective_pos}", 150, 370, 10)
+
         player_rect = anti_clip(player_rect, player_movement, tile_rects)
 
-        player_rect, collisions = move(player_rect, player_movement, tile_rects)
+        player_rect, collisions_state = move(player_rect, player_movement, tile_rects)
+
+        # count collisions
+        if collisions_state != collision_state_prev:
+            for i in ["top", "bottom", "right", "left"]:
+                if collisions_state[i] != collision_state_prev[i]:
+                    collisions_cur += 1
+                    collision_damage()
+                    if dev_m:
+                        print(collisions_cur)
 
         # draw player
         display.blit(
@@ -632,15 +736,17 @@ def main(pl_id, wld_id):
             (player_rect.x - scroll[0], player_rect.y - scroll[1]),
         )
 
+        if game_over:
+            add_text("Game Over", 300, 195, 21)
+
         screen.blit(pyg.transform.scale(display, WINDOW_SIZE), (0, 0))
         if pause:
-            resume_b, pause_b, quit_b = draw_pause()
-
+            screen.blit(surface0, (0, 0))
         pyg.display.update()
-        time_deltatime = clock.tick(30)
+        time_deltatime = clock.tick(35)
 
     pyg.quit()
 
 
 if __name__ == "__main__":
-    main(4, 6)
+    main(2, 1)
