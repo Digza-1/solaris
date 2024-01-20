@@ -330,7 +330,7 @@ def draw_bg():
     # ===================== pause =======================
 
 
-resume = save = quit_game = None
+resume_b = save_b = quit_b = retry_b = None
 
 
 def draw_pause():
@@ -457,6 +457,7 @@ def move(rect, movement, tiles):
     movement = (int(movement[0]), int(movement[1]))
     collision_types = {"top": False, "bottom": False, "right": False, "left": False}
     rect.x += movement[0]
+    player_stats["dist_moved"] += float(movement[0])
 
     hit_list = collision_test(rect, tiles)
 
@@ -471,6 +472,7 @@ def move(rect, movement, tiles):
                 collision_types["left"] = True
 
     rect.y += movement[1]
+    player_stats["dist_moved"] += float(movement[1])
 
     if cliping == True:
         hit_list = collision_test(rect, tiles)
@@ -524,6 +526,7 @@ def main(pl_id, wld_id):
     global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
     global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
     global collisions_cur, collision_state, collision_state_prev, player_stats
+    global resume_b, save_b, quit_b, retry_b
     gnd.get_settings_sql_gnd(pl_id, wld_id)
 
     pyg.init()  # initiates pygame
@@ -604,8 +607,7 @@ def main(pl_id, wld_id):
 
         if pause:
             resume_b, save_b, quit_b = draw_pause()
-        if game_over:
-            retry_b = game_over_buttons()
+
         # =========================== events =========================
         for event in pyg.event.get():  # event loop
             if event.type == pyg.QUIT:
@@ -670,12 +672,13 @@ def main(pl_id, wld_id):
                     save_state(pl_id, wld_id)
                     game_map = {}
                     game_over = False
+                    player_health = 100
                     pause = False
                     running = False
-                if retry_b.collidepoint(event.pos):
-                    player_health = 100
-                    player_init_pos = get_player_pos()
-                    player_rect.x, player_rect.y = player_init_pos
+                # if retry_b.collidepoint(event.pos):
+                #     player_health = 100
+                #     player_init_pos = get_player_pos()
+                #     player_rect.x, player_rect.y = player_init_pos
 
         # ================================== movement =====================================
         # movement stuff
@@ -725,8 +728,6 @@ def main(pl_id, wld_id):
                 if collisions_state[i] != collision_state_prev[i]:
                     collisions_cur += 1
                     collision_damage()
-                    if dev_m:
-                        print(collisions_cur)
 
         # draw player
         display.blit(
