@@ -22,6 +22,7 @@ add_user_image = None  # ctk.CTkImage(
 autofill_user = False
 user_info = None
 uid = None
+re_u = None
 world_id = None
 app_scr = ctk.CTk()
 
@@ -39,30 +40,41 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("theme\solaris_theme_dark.json")
 
 
-def rem_user(username, password, player_id):
-    d = {"username": username, "password": password, "player_id": player_id}
+def rem_user(username, password, player_id, re_u):
+    d = {
+        "username": username,
+        "password": password,
+        "player_id": player_id,
+        "re_u": re_u,
+    }
     with open("rem_user.pkl", "wb") as f:
         pickle.dump(d, f)
 
 
 def forget_user():
-    global autofill_user, user_info, uid
+    global autofill_user
     with open("rem_user.pkl", "wb") as f:
         pickle.dump(None, f)
     autofill_user = False
-    user_info = uid = None
+
+
+def create_file():
+    with open("rem_user.pkl", "wb") as f:
+        pickle.dump(None, f)
 
 
 def load_user():
-    global autofill_user, user_info, uid
+    global autofill_user, user_info, uid, re_u
     try:
         user_info = pickle.load(open("rem_user.pkl", "rb"))
     except:
+        create_file()
         autofill_user = False
 
     if user_info != None:
         autofill_user = True
-        uid = user_info["uid"][0]
+        uid = user_info["player_id"][0]
+        re_u = user_info["re_u"]
 
 
 def check_user(username, passwd):
@@ -128,13 +140,15 @@ def login():
     re_u = checkbox.get()
     if player_id != None:
         if re_u == True:
-            rem_user(uname, passw, player_id)
+            rem_user(uname, passw, player_id, re_u)
 
         uid = player_id[0]
         tkmb.showinfo(title="Login Successful", message="logged in Successfully")
-        if not re_u:
+        if re_u:
             print("restart program to continue")
             exit()
+        else:
+            title_screen()
     else:
         tkmb.showerror(title="Login Failed", message="Invalid Username or password")
 
@@ -208,12 +222,6 @@ confirm_user_pass = None
 checkbox = None
 
 
-def rem_user(username, password, uid):
-    d = {"username": username, "password": password, "uid": uid}
-    with open("rem_user.pkl", "wb") as f:
-        pickle.dump(d, f)
-
-
 def check_username(event):
     global user_valid
     mydb = mysql.connector.connect(
@@ -277,7 +285,7 @@ def register():
 
             re_u = checkbox.get()
             if re_u == True:
-                rem_user(uname, passw, uid)
+                rem_user(uname, passw, uid, re_u)
 
             if uid != None:
                 tkmb.showinfo(
@@ -355,8 +363,8 @@ def sign_up_screen():
 
     app_scr.mainloop()
 
-    # -----------------------settings--------------------------
 
+# -----------------------settings--------------------------
 
 sp = r_off = g_off = b_off = None
 
@@ -651,7 +659,7 @@ def admin_options():
 def logout():
     forget_user()
     print("logged out")
-    print("\n\n restart app ")
+    print("\n\n restart app to login ")
     app_scr.destroy()
     exit()
 
@@ -1081,5 +1089,6 @@ print(user_info)
 
 if user_info == None:
     login_screen()
+
 else:
     title_screen()

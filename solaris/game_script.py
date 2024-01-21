@@ -755,7 +755,3 @@ def main(pl_id, wld_id):
         time_deltatime = clock.tick(30)
 
     pyg.quit()
-
-
-if __name__ == "__main__":
-    main(2, 2)
