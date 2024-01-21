@@ -83,6 +83,23 @@ def check_user(username, passwd):
     return res
 
 
+def check_user_exist(uname):
+    global user_valid
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+
+    # to check is username exists
+    q = f"select username from users where username = '{uname}'; "
+    mycursor.execute(q)
+    res = mycursor.fetchone()
+
+    if res != None and len(uname) > 0:
+        return True
+    return False
+
+
 def check_sql_database():
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database=""
@@ -109,21 +126,20 @@ def login():
     passw = luser_pass.get()
     player_id = check_user(uname, passw)
     re_u = checkbox.get()
-    if re_u == True:
-        rem_user(uname, passw, player_id)
-
     if player_id != None:
-        uname = luser_entry.get()
-        passw = luser_pass.get()
+        if re_u == True:
+            rem_user(uname, passw, player_id)
+
         uid = player_id[0]
         tkmb.showinfo(title="Login Successful", message="logged in Successfully")
-        print("restart program to continue")
-        exit()
+        if not re_u:
+            print("restart program to continue")
+            exit()
     else:
         tkmb.showerror(title="Login Failed", message="Invalid Username or password")
 
 
-# --------------------------login screen --------------------------
+# -------------------------- login screen --------------------------
 def login_screen():
     global luser_entry, user_info, luser_pass, checkbox, app_scr
     load_user()
@@ -419,7 +435,7 @@ def reset_admin():
         costume,
     ) = res1
 
-    q1_2 = f"""update game_settings
+    q1_2 = f"""update game_settings set
     speed = {speed},grey_threshold = {grey_threshold},
     red_threshold = {red_threshold}, blue_threshold = {blue_threshold},
     difficulty = {difficulty},costume = {costume} 
@@ -427,6 +443,44 @@ def reset_admin():
 
     cursor.execute(q1_2)
     mydb.commit()
+    print("reset changes")
+
+
+def reset_passwd():
+    global uid, app_scr
+
+    mydb = mysql.connector.connect(
+        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
+    )
+    mycursor = mydb.cursor()
+
+    edit_name_box = ctk.CTkInputDialog(text="enter username: ", title="username")
+    edit_name = str(edit_name_box.get_input())
+
+    edit_passwd_box = ctk.CTkInputDialog(
+        text="enter new password: ", title="new password"
+    )
+    edit_passwd = str(edit_passwd_box.get_input())
+
+    print("edit details:", edit_name, edit_passwd)
+    if len(edit_name) > 0:
+        user_state = check_user_exist(edit_name)
+    else:
+        user_state = False
+
+    if user_state == True:
+        query = (
+            f"update users set passwd = '{edit_passwd}' where username = '{edit_name}';"
+        )
+        mycursor.execute(query)
+        mydb.commit()
+        print("edited password")
+        tkmb.showinfo(title="passwd change", message=" password changed Successfully")
+
+        mycursor.close()
+        mydb.close()
+    else:
+        tkmb.showerror(title="passwd change failed", message=" invalid username ")
 
 
 def check_admin(admin_name, passwd):
@@ -484,6 +538,9 @@ def admin_settings_screen():
     inFrame = ctk.CTkScrollableFrame(master=frame, width=500, height=350)
     inFrame.pack(padx=20)
 
+    label = ctk.CTkLabel(inFrame, text="admin settings:", font=("", 22), width=220)
+    label.pack(pady=9)
+
     label = ctk.CTkLabel(inFrame, text="change difficulty:")
     label.pack(pady=5)
 
@@ -497,11 +554,16 @@ def admin_settings_screen():
     )
     difficulty_box.pack(pady=10)
 
-    label = ctk.CTkLabel(inFrame, text="admin settings:")
-    label.pack(pady=4)
+    label = ctk.CTkLabel(inFrame, text="change password:", font=("", 17))
+    label.pack(pady=3)
+    btn = ctk.CTkButton(
+        inFrame, width=200, text="change password", command=reset_passwd
+    )
+    btn.pack(pady=5, padx=3)
 
     label = ctk.CTkLabel(inFrame, text="player speed:")
     label.pack(pady=4)
+
     sp = ctk.CTkEntry(master=inFrame, placeholder_text="player speed", width=220)
     sp.pack(pady=12, padx=15)
 
@@ -510,19 +572,19 @@ def admin_settings_screen():
     r_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
     r_off.pack(pady=12, padx=15)
 
-    label = ctk.CTkLabel(inFrame, text="red offset:")
+    label = ctk.CTkLabel(inFrame, text="blue offset:")
     label.pack(pady=4)
-    b_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
+    b_off = ctk.CTkEntry(master=inFrame, placeholder_text="blue offset", width=220)
     b_off.pack(pady=12, padx=15)
 
-    label = ctk.CTkLabel(inFrame, text="red offset:")
+    label = ctk.CTkLabel(inFrame, text="grey offset:")
     label.pack(pady=4)
-    g_off = ctk.CTkEntry(master=inFrame, placeholder_text="red offset", width=220)
+    g_off = ctk.CTkEntry(master=inFrame, placeholder_text="grey offset", width=220)
     g_off.pack(pady=12, padx=15)
 
     admin_data = solaris.game_script.get_settings_sql_player(uid)
     # speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
-
+    print(admin_data)
     sp.insert(0, str(admin_data[0]))
 
     r_off.insert(0, str(admin_data[2]))
@@ -699,7 +761,6 @@ def settings_screen():
 
 
 def get_worlds_data():
-
     mydb = mysql.connector.connect(
         host="localhost", user="root", passwd=sqlPass, database="project_solaris"
     )
@@ -709,7 +770,7 @@ def get_worlds_data():
     mycursor.execute(query)
 
     res = mycursor.fetchall()
-    print("worlds data:",res)
+    print("worlds data:", res)
     mycursor.close()
     mydb.close()
 
@@ -919,7 +980,7 @@ def get_stats_data(uid):
         mycursor.execute(query)
         res = mycursor.fetchone()
 
-        print("stats:",res)
+        print("stats:", res)
         stat_d = {}
         # distance_moved,dist_from_obj,collisions
         l = [("distance_moved", 0), ("dist_from_obj", 1), ("collisions", 2)]

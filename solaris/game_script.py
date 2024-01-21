@@ -1,10 +1,8 @@
 # game script contains game code
 
 import pygame as pyg
-import pygame_gui
 import mysql.connector
 import random
-import pickle
 
 try:
     import ground_generation as gnd
@@ -28,11 +26,8 @@ player_health = 100
 collision_difficulty_damage = {1: 1, 2: 3, 3: 6}
 player_regen_health = {1: 0.04, 2: 0.01, 3: 0.006}
 
-dev_m = True  # --------------------
+dev_m = False  # --------------------
 
-pause = False
-game_over = False
-retry = False
 
 speed = 0.1
 scroll = [0, 0]
@@ -41,10 +36,16 @@ CHUNK_SIZE = 8
 TILE_SIZE = 16
 objective_pos = None
 
-SKY_COLOUR = (10, 10, 10)  # (146, 244, 255)
+player_active = False
+
+pause = False
+game_over = False
+retry = False
+
+SKY_COLOUR = (10, 10, 10)
 SKY_COLOUR1 = (59, 135, 164)
 
-BG_COLOUR = (14, 14, 15)  # (26, 135, 122)  # (19, 127, 115)  # old(15, 76, 73)
+BG_COLOUR = (14, 14, 15)
 BG_COLOUR2 = (26, 135, 122)
 
 game_map = {}
@@ -284,6 +285,7 @@ def save_state(pl_id, wld_id):
     cursor.execute(save_q)
     cursor.execute(stats_q)
     mydb.commit()
+    print(" saved ")
 
 
 def draw_space(tile_rects):
@@ -457,7 +459,7 @@ def move(rect, movement, tiles):
     movement = (int(movement[0]), int(movement[1]))
     collision_types = {"top": False, "bottom": False, "right": False, "left": False}
     rect.x += movement[0]
-    player_stats["dist_moved"] += float(movement[0])
+    player_stats["dist_moved"] += abs(float(movement[0]))
 
     hit_list = collision_test(rect, tiles)
 
@@ -472,7 +474,7 @@ def move(rect, movement, tiles):
                 collision_types["left"] = True
 
     rect.y += movement[1]
-    player_stats["dist_moved"] += float(movement[1])
+    player_stats["dist_moved"] += abs(float(movement[1]))
 
     if cliping == True:
         hit_list = collision_test(rect, tiles)
@@ -494,18 +496,20 @@ def anti_clip(rect, movement, tiles):
     if cliping == True:
         for tile in tiles:
             if rect.colliderect(tile):
-                movement[0] += TILE_SIZE + 5
-
+                movement[0] += TILE_SIZE + 5 * random.randint(-3, 5)
+                if dev_m:
+                    print("anticlip")
     return rect
 
 
 def collision_damage():
     global player_health, game_over
-    if player_health > 0:
-        player_health -= collision_difficulty_damage[int(difficulty)]
-    else:
-        player_health = 0
-        game_over = True
+    if player_active:
+        if player_health > 0:
+            player_health -= collision_difficulty_damage[int(difficulty)]
+        else:
+            player_health = 0
+            game_over = True
 
 
 def regenrate_player():
@@ -526,7 +530,7 @@ def main(pl_id, wld_id):
     global surface0, game_map, objective_pos, player_rect, player_img1, player_img2, player_img3
     global astroid_grey_img, astroid_grey2_img, astroid_red_img, astroid_red2_img, astroid_blue_img, player_costume_index
     global collisions_cur, collision_state, collision_state_prev, player_stats
-    global resume_b, save_b, quit_b, retry_b
+    global resume_b, save_b, quit_b, retry_b, player_active
     gnd.get_settings_sql_gnd(pl_id, wld_id)
 
     pyg.init()  # initiates pygame
@@ -538,9 +542,10 @@ def main(pl_id, wld_id):
     )  # used as the low scaled surface for rendering
     surface0 = pyg.Surface(WINDOW_SIZE, pyg.SRCALPHA)
 
-    dev_m = True  # --------------------
-
     game_map = {}
+
+    player_health = 100
+    player_active = False
 
     astroid_grey_img = pyg.image.load("solaris/assets/rock.png").convert()
     astroid_grey_img.set_colorkey((0, 0, 0))
@@ -582,7 +587,6 @@ def main(pl_id, wld_id):
     player_rect = pyg.Rect(100, 100, 13, 13)
     player_rect.x, player_rect.y = 0, 0
     clock = pyg.time.Clock()
-    time_deltatime = clock.tick(30)
 
     get_settings_sql(pl_id, wld_id)
 
@@ -631,6 +635,9 @@ def main(pl_id, wld_id):
                     if event.key == pyg.K_DOWN or event.key == pyg.K_s:
                         moving_down = True
 
+                    if not player_active:
+                        player_active = True
+
             if event.type == pyg.KEYUP:
                 if event.key == pyg.K_ESCAPE:
                     if pause:
@@ -647,8 +654,8 @@ def main(pl_id, wld_id):
                     moving_up = False
                     moving_down = False
 
-                if event.key == pyg.K_0:
-                    player_rect.x += 10000
+                if event.key == pyg.K_0 and dev_m:
+                    player_rect.x += 1000
 
                 if event.key == pyg.K_RIGHT or event.key == pyg.K_d:
                     moving_right = False
@@ -673,6 +680,7 @@ def main(pl_id, wld_id):
                     game_map = {}
                     game_over = False
                     player_health = 100
+                    player_active = False
                     pause = False
                     running = False
                 # if retry_b.collidepoint(event.pos):
@@ -720,12 +728,12 @@ def main(pl_id, wld_id):
 
         player_rect = anti_clip(player_rect, player_movement, tile_rects)
 
-        player_rect, collisions_state = move(player_rect, player_movement, tile_rects)
+        player_rect, collision_state = move(player_rect, player_movement, tile_rects)
 
         # count collisions
-        if collisions_state != collision_state_prev:
+        if collision_state != collision_state_prev:
             for i in ["top", "bottom", "right", "left"]:
-                if collisions_state[i] != collision_state_prev[i]:
+                if collision_state[i] != collision_state_prev[i]:
                     collisions_cur += 1
                     collision_damage()
 
@@ -744,10 +752,10 @@ def main(pl_id, wld_id):
         if pause:
             screen.blit(surface0, (0, 0))
         pyg.display.update()
-        time_deltatime = clock.tick(35)
+        time_deltatime = clock.tick(30)
 
     pyg.quit()
 
 
 if __name__ == "__main__":
-    main(2, 1)
+    main(2, 2)
