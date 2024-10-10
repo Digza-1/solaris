@@ -1,7 +1,6 @@
 import customtkinter as ctk
 import tkinter.messagebox as tkmb
 import pickle
-import mysql.connector
 
 from random import randint
 from PIL import Image
@@ -33,7 +32,6 @@ costume_dict = {"space craft 1": 1, "space craft 2": 2, "space craft 3": 3}
 diff_dict = {"easy": 1, "normal": 2, "hard": 3}
 refresh_worlds = True
 world_var = None
-sqlPass = "123"
 
 
 ctk.set_appearance_mode("dark")
@@ -77,54 +75,6 @@ def load_user():
         re_u = user_info["re_u"]
 
 
-def check_user(username, passwd):
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    q = f"select player_id,username from users where username = '{username}'and passwd = '{passwd}';"
-    mycursor.execute(q)
-    res = mycursor.fetchone()
-
-    print(res)
-
-    mycursor.close()
-    mydb.close()
-
-    return res
-
-
-def check_user_exist(uname):
-    global user_valid
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    # to check is username exists
-    q = f"select username from users where username = '{uname}'; "
-    mycursor.execute(q)
-    res = mycursor.fetchone()
-
-    if res != None and len(uname) > 0:
-        return True
-    return False
-
-
-def check_sql_database():
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database=""
-    )
-    cursor = mydb.cursor()
-
-    q1 = "use project_solaris;"
-
-    try:
-        cursor.execute(q1)
-        res = cursor.fetchone()
-    except:
-        import setup.db_init
 
 
 def close_root_screen():
@@ -222,148 +172,6 @@ confirm_user_pass = None
 checkbox = None
 
 
-def check_username(event):
-    global user_valid
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    uname = event.widget.get()
-
-    # to check is username exists
-    q = f"select username from users where username = '{uname}'; "
-    mycursor.execute(q)
-    res = mycursor.fetchone()
-
-    if res != None and len(uname) > 0:
-        u_valid_text.configure(text="username already taken", text_color="#ee4b4c")
-        user_valid = False
-    else:
-        u_valid_text.configure(text="username valid", text_color="#34a853")
-        user_valid = True
-
-
-def register_user(username, passwd):
-    global user_valid
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    # to check is username exists
-    res = None
-    if user_valid == True:
-        q = f"insert into users (username,passwd) values ('{username}','{passwd}'); "
-        mycursor.execute(q)
-        mydb.commit()
-
-        q = f"select player_id from users where username = '{username}'and passwd = '{passwd}'; "
-        mycursor.execute(q)
-        res = mycursor.fetchone()
-
-        user_valid = False
-    else:
-        tkmb.showerror(
-            title="registration Failed",
-            message="Username already exists",
-        )
-    mycursor.close()
-    mydb.close()
-
-    return res
-
-
-def register():
-    uname = suser_entry.get()
-    passw = suser_pass.get()
-    conf_passw = confirm_user_pass.get()
-
-    if passw == conf_passw:
-        if user_valid and len(uname) > 0:
-            uid = register_user(uname, passw)
-
-            re_u = checkbox.get()
-            if re_u == True:
-                rem_user(uname, passw, uid, re_u)
-
-            if uid != None:
-                tkmb.showinfo(
-                    title="registration Successful",
-                    message="You have registered Successfully",
-                )
-
-        else:
-            tkmb.showerror(
-                title="registration Failed",
-                message="username invalid",
-            )
-    else:
-        tkmb.showerror(
-            title="registration Failed",
-            message="password not matching",
-        )
-
-
-def sign_up_screen():
-    global suser_entry, suser_pass, confirm_user_pass, u_valid_text, checkbox, app_scr
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("theme\solaris_theme_dark.json")
-
-    app_scr = ctk.CTkToplevel()
-    app_scr.geometry("455x600")
-    app_scr.title("sign up")
-    app_scr.resizable(height=True, width=False)
-
-    bg_img3 = ctk.CTkImage(Image.open("solaris\\assets\\star_bg3.png"), size=(800, 800))
-    label = ctk.CTkLabel(app_scr, image=bg_img3, text="")
-    label.place(x=0, y=0)
-
-    label = ctk.CTkLabel(app_scr, font=("", 32), text="sign up")
-    label.pack(pady=20)
-
-    frame0 = ctk.CTkFrame(master=app_scr, height=570, width=400)
-    frame0.pack(fill="x", pady=10, padx=10, expand=False)
-
-    frame = ctk.CTkFrame(master=frame0, height=570, width=400, fg_color="#020202")
-    frame.pack(pady=10, padx=10, fill="x", expand=False)
-
-    label = ctk.CTkLabel(master=frame, text="enter user crentials")
-    label.pack(pady=12, padx=10)
-
-    suser_entry = ctk.CTkEntry(master=frame, placeholder_text="Username", width=220)
-    suser_entry.pack(pady=3, padx=15)
-    suser_entry.bind("<KeyRelease>", check_username)
-
-    u_valid_text = ctk.CTkLabel(master=frame, text="")
-    u_valid_text.pack(pady=1, padx=10)
-
-    suser_pass = ctk.CTkEntry(
-        master=frame, placeholder_text="Password", show="*", width=220
-    )
-    suser_pass.pack(pady=12, padx=10)
-
-    confirm_user_pass = ctk.CTkEntry(
-        master=frame, placeholder_text="confirm Password", show="*", width=220
-    )
-    confirm_user_pass.pack(pady=12, padx=10)
-
-    button = ctk.CTkButton(master=frame, text="register", command=register)
-    button.pack(pady=12, padx=10)
-
-    button = ctk.CTkButton(
-        master=frame,
-        text="back to login",
-        bg_color="transparent",
-        fg_color="transparent",
-        width=100,
-        command=app_scr.destroy,
-    )
-    button.pack(pady=20, padx=10)
-
-    app_scr.mainloop()
-
-
 # -----------------------settings--------------------------
 
 sp = r_off = g_off = b_off = None
@@ -372,10 +180,6 @@ sp = r_off = g_off = b_off = None
 def save_admin_settings():
     global sp, r_off, g_off, b_off
     global difficulty, admin_settings_dict
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
 
     admin_settings_dict["speed"] = sp.get()
     admin_settings_dict["red_threshold"] = r_off.get()
@@ -395,10 +199,7 @@ def save_admin_settings():
 
 def save_user_settings():
     global difficulty, costume
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
+
     q = "update game_settings set difficulty = {},costume = {} where player_id = {};".format(
         difficulty, costume, uid
     )
@@ -411,11 +212,6 @@ def reset():
     difficulty = 1
     costume = 1
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
-
     q = "update game_settings set difficulty = {}, costume = {} ;".format(
         difficulty, costume
     )
@@ -424,15 +220,10 @@ def reset():
 def reset_admin():
     global difficulty
     difficulty = 1
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
 
     q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings; """
 
-    cursor.execute(q1_1)
     res1 = cursor.fetchone()
     (
         speed,
@@ -453,59 +244,6 @@ def reset_admin():
     mydb.commit()
     print("reset changes")
 
-
-def reset_passwd():
-    global uid, app_scr
-
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    edit_name_box = ctk.CTkInputDialog(text="enter username: ", title="username")
-    edit_name = str(edit_name_box.get_input())
-
-    edit_passwd_box = ctk.CTkInputDialog(
-        text="enter new password: ", title="new password"
-    )
-    edit_passwd = str(edit_passwd_box.get_input())
-
-    print("edit details:", edit_name, edit_passwd)
-    if len(edit_name) > 0:
-        user_state = check_user_exist(edit_name)
-    else:
-        user_state = False
-
-    if user_state == True:
-        query = (
-            f"update users set passwd = '{edit_passwd}' where username = '{edit_name}';"
-        )
-        mycursor.execute(query)
-        mydb.commit()
-        print("edited password")
-        tkmb.showinfo(title="passwd change", message=" password changed Successfully")
-
-        mycursor.close()
-        mydb.close()
-    else:
-        tkmb.showerror(title="passwd change failed", message=" invalid username ")
-
-
-def check_admin(admin_name, passwd):
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
-
-    q = f"select admin_id,username from admins where username = '{admin_name}' and passwd = '{passwd}'; "
-    print(q)
-    mycursor.execute(q)
-    res = mycursor.fetchone()
-    print(res)
-    mycursor.close()
-    mydb.close()
-
-    return res
 
 
 admin = False
@@ -644,7 +382,7 @@ def admin_options():
     admin_pass = ctk.CTkInputDialog(text="enter admin passwd:", title="admin passwd")
     admin_pass = admin_pass.get_input()
 
-    acc = check_admin(admin_name, admin_pass)
+    acc = True
 
     if acc != None:
         app_scr.destroy()

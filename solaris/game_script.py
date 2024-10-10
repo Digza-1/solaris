@@ -1,7 +1,6 @@
 # game script contains game code
 
 import pygame as pyg
-import mysql.connector
 import random
 
 try:
@@ -73,7 +72,6 @@ collision_state = {}
 clock = pyg.time.Clock()
 time_deltatime = clock.tick(30)
 
-sqlPass = "123"
 
 world_id = 0
 player_id = 0
@@ -106,10 +104,7 @@ def insert_sql_settings(mydb, cursor, pl_id):
 
 
 def get_player_pos(pl_id, wld_id):
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
+
 
     q1 = f"""select x_pos,y_pos from game_worlds where player_id = {pl_id} and world_id = {wld_id} ;"""
 
@@ -121,10 +116,7 @@ def get_settings_sql_player(pl_id):
     global player_id
     global speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
+
     # get settings
     q1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {pl_id} ;"""
@@ -156,10 +148,6 @@ def get_settings_sql(pl_id, wld_id):
     global player_id, world_id, objective_pos
     global seed, speed, grey_thershold, red_threshold, blue_thershold, difficulty, costume
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
     # get settings
     q1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {pl_id} ;"""
@@ -268,10 +256,7 @@ def save_state(pl_id, wld_id):
     except:
         obj_dist = 0
     player_stats["collisions"] += collisions_cur
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
+
 
     save_q = f"""update game_worlds set x_pos = {xpos}, y_pos = {ypos}, 
     obj_x = {objective_pos[0]},obj_y = {objective_pos[1]}

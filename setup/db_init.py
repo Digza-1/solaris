@@ -1,6 +1,6 @@
 # database initialisation
 #ehe
-import mysql.connector
+
 
 print("init database")
 # init database
