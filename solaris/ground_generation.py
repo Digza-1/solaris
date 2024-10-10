@@ -1,6 +1,5 @@
 import random
 import opensimplex
-import mysql.connector
 
 
 # Colors (RGB)
@@ -20,7 +19,6 @@ BLUE_THRESHOLD = 0.1
 
 seed = 15373  # random.randint(-1000, 1000)
 far_limit = 10000000
-sqlPass = "123"
 
 
 def insert_sql_settings(mydb, cursor, pl_id):
@@ -28,7 +26,6 @@ def insert_sql_settings(mydb, cursor, pl_id):
     q1_1 = f"""select speed,grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_default_settings; """
 
-    cursor.execute(q1_1)
     res1 = cursor.fetchone()
     (
         speed,
@@ -54,10 +51,7 @@ def get_settings_sql_gnd(pl_id, wld_id):
     global BLUE_THRESHOLD, RED_THRESHOLD, GREY_THRESHOLD, difficulty
     player_id = pl_id
     world_id = wld_id
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    cursor = mydb.cursor()
+
 
     q1 = f"""select grey_threshold,red_threshold,blue_threshold,difficulty,costume
       from game_settings where player_id = {player_id} ;"""

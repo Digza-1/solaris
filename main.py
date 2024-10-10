@@ -507,10 +507,6 @@ def settings_screen():
 
 
 def get_worlds_data():
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
 
     query = f"select world_id ,world_name from game_worlds where player_id = {uid};"
     mycursor.execute(query)
@@ -542,10 +538,6 @@ def convert_num(str1):
 def create_world():
     global uid, app_scr, worlds
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
 
     name_inp = ctk.CTkInputDialog(text="enter world name: ", title="world name")
     world_name = name_inp.get_input()
@@ -577,10 +569,6 @@ def create_world():
 def delete_world():
     global uid, app_scr, worlds
 
-    mydb = mysql.connector.connect(
-        host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-    )
-    mycursor = mydb.cursor()
 
     name_inp = ctk.CTkInputDialog(text="enter world name: ", title="world name")
     world_name = str(name_inp.get_input())
@@ -716,10 +704,6 @@ stats_n = "distance_moved,dist_from_obj,collisions"
 
 def get_stats_data(uid):
     if uid != None and world_id != -1:
-        mydb = mysql.connector.connect(
-            host="localhost", user="root", passwd=sqlPass, database="project_solaris"
-        )
-        mycursor = mydb.cursor()
 
         query = f"select {stats_n} from player_stats where player_id = {uid} and world_id = {world_id};"
 
